@@ -49,9 +49,12 @@ LON = 2
 pm_ha = []
 for x in range(bounds[0, 0], bounds[0, 1], 100):
 	for y in range(bounds[0, 2], bounds[0, 3], 100):
-		temp = data[(data[:, LAT] >= x) & (data[:, LAT] < (x + 100)) & (data[:, LON] >= y) & (data[:, LON] < (y + 100)),
-		       :]
+
+		# Fetch data in the bounding box
+		temp = data[(data[:, LAT] >= x) & (data[:, LAT] < (x + 100)) & (data[:, LON] >= y) & (data[:, LON] < (y + 100)),:]
 		if temp.shape[0] != 0:
+
+			# Calculate Statistics and dependent variable
 			m = np.mean(temp[:, IND_AVG_DATA])
 			s = np.std(temp[:, IND_AVG_DATA])
 			med = np.median(temp[:, IND_AVG_DATA])
@@ -67,20 +70,28 @@ for x in range(bounds[0, 0], bounds[0, 1], 100):
 
 			pm_ha.append(pm_num)
 
-pm_ha_numpy = np.array(pm_ha)
+del data
 
 LAT = 0
 LON = 1
 
-print("Training shape with tram depots: ", pm_ha_numpy.shape)
+print("Training shape with tram depots: ({}, {})".format(len(pm_ha), len(pm_ha[1])))
 
 # Tram depots
 ha_depots = [[681800, 247400], [681700, 247400], [681700, 247500], [681700, 249500], [683700, 251500], [679400, 248500],
              [683400, 249900], [683400, 249800], [682500, 243400]]
 
+# check if Tram depot in bounding box
+pm_ha_numpy = np.array(pm_ha)
 for depot in ha_depots:
 	pm_ha_numpy = pm_ha_numpy[~((pm_ha_numpy[:, LAT] == depot[LAT]) & (pm_ha_numpy[:, LON] == depot[LON])), :]
 
+pm_ha = pm_ha_numpy.tolist()
+
+del pm_ha_numpy
+
+
+# Load land use data
 pop = sio.loadmat(rootdir + 'landuse_data/population_zh_2011.mat')['pop']
 indus = sio.loadmat(rootdir + 'landuse_data/industry_zh_2008.mat')['indus']
 floor_level = sio.loadmat(rootdir + 'landuse_data/floorlevel_zh_2011.mat')['floor_level']
@@ -95,6 +106,7 @@ slope_exp = sio.loadmat(rootdir + 'landuse_data/slope_exp_zh.mat')['slope_exp']
 traffic = sio.loadmat(rootdir + 'landuse_data/traffic_zh_2007.mat')['traffic']
 traffic_ugz = sio.loadmat(rootdir + 'landuse_data/traffic_ugz_2013.mat')['traffic_ugz']
 
+# Append land use data to pm data
 print("Training shape without tram depots: ({}, {})".format(len(pm_ha), len(pm_ha[1])))
 for row in pm_ha:
 	row.append(feature(pop, row, 2))
@@ -116,8 +128,10 @@ for row in pm_ha:
 
 print("Training shape with features: ({}, {})".format(len(pm_ha), len(pm_ha[1])))
 
-print("Training model")
 
+# Simple GAM
+# todo: Cross validation, other .mat files
+print("Training model")
 pm_ha_numpy = np.array(pm_ha)
 
 from pygam import LinearGAM
