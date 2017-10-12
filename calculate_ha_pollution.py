@@ -1,4 +1,9 @@
 import numpy as np
+import paths
+import argparse
+import scipy.io as sio
+import csv
+from clean_data import clean_data
 
 
 def calculate_ha_pollution(data, bounds, LAT=1, LON=2, IND_AVG_DATA=3):
@@ -34,3 +39,24 @@ def calculate_ha_pollution(data, bounds, LAT=1, LON=2, IND_AVG_DATA=3):
 
     pm_ha_numpy = np.array(pm_ha)
     return pm_ha_numpy
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_file', help='Input file')
+    args = parser.parse_args()
+
+    # This expects a .mat file
+    data = sio.loadmat(args.input_file)['data']
+    bounds = sio.loadmat(paths.rootdir + 'bounds')['bounds'][0]
+
+    cleaned_data = clean_data(data)
+
+    # Use default columns for LAT, LON and IND_AVG_DATA
+    pm_ha_data = calculate_ha_pollution(cleaned_data, bounds)
+
+    # Cut the '.mat' from the mat's filename and append '_ha.csv'
+    new_filename = args.input_file[:-4] + '_ha.csv'
+
+    with open(new_filename, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerows(pm_ha_data)
