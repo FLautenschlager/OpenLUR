@@ -1,145 +1,221 @@
-from os.path import expanduser
-import scipy.io as sio
-import math
-import numpy as np
-import psycopg2
 import csv
+import math
+import pickle
+
+import numpy as np
+import scipy.io as sio
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import cross_val_score
+from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.model_selection import train_test_split, KFold
+
+import paths
+from LUR_preprocessing import query_osm_polygone, query_osm_highway
 from wgs84_ch1903 import *
 
-conn = psycopg2.connect(dbname="zurich")
-cur = conn.cursor()
+
+class Regressor:
+	def __init__(self):
+		self.regressionModel = None
+		self.features = []
+
+	def fit(self, X_train, y_train):
+		self.total_features = X_train.shape[1]
+		features_to_test = [i for i in range(self.total_features)]
+		chosen_features = []
+		print("count of features: {}".format(len(features_to_test)))
+
+		dr2 = 100.0
+		r2prev = 0.0
+
+		while dr2 > 0.01:
+
+			scores = []
+			for feature in features_to_test:
+				regressionModel = LinearRegression()
+				feats = [i for i in chosen_features]
+				feats.append(feature)
+				regressionModel.fit(X_train[:, feats], y_train)
+				scores.append(regressionModel.score(X_train[:, feats], y_train))
+
+			r2 = max(scores)
+
+			print("r squared: {}".format(r2))
+			dr2 = r2 - r2prev
+			r2prev = r2
+			print("difference to previous r squared: {}".format(dr2))
+
+			if dr2 > 0.01:
+				chosen_features.append(features_to_test[scores.index(r2)])
+				features_to_test.pop(scores.index(r2))
+
+		print("Chosen features for r2 of {} on test data:".format(r2prev))
+		print(chosen_features)
+
+		self.features = chosen_features
+
+		self.regressionModel = LinearRegression()
+		self.regressionModel.fit(X_train[:, chosen_features], y_train)
+
+	def predict(self, X):
+		if X.shape[1] == self.total_features:
+			X_predict = X[:, self.features]
+		else:
+			X_predict = X
+		return self.regressionModel.predict(X_predict)
+
+	def score(self, X, y):
+		print("return score")
+		if X.shape[1] == self.total_features:
+			X_predict = X[:, self.features]
+		else:
+			X_predict = X
+		return self.regressionModel.score(X_predict, y)
+
+	def giveModel(self):
+		return self
 
 
-# (8.543336, 47.398884, 1500, "landuse", "industrial")
+def regression(X, y):
+	features_to_test = [i for i in range(X.shape[1])]
+	chosen_features = []
+	print("count of features: {}".format(len(features_to_test)))
+
+	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+
+	dr2 = 100.0
+	r2prev = 0.0
+
+	while dr2 > 0.01:
+
+		scores = []
+		for feature in features_to_test:
+			regressionModel = LinearRegression()
+			feats = [i for i in chosen_features]
+			feats.append(feature)
+			regressionModel.fit(X_train[:, feats], y_train)
+			scores.append(regressionModel.score(X_test[:, feats], y_test))
+
+		r2 = max(scores)
+
+		print("r squared: {}".format(r2))
+		dr2 = r2 - r2prev
+		r2prev = r2
+		print("difference to previous r squared: {}".format(dr2))
+
+		if dr2 > 0.01:
+			chosen_features.append(features_to_test[scores.index(r2)])
+			features_to_test.pop(scores.index(r2))
+
+	print("Chosen features for r2 of {} on test data:".format(r2prev))
+	print(chosen_features)
+
+	regressionModel = LinearRegression()
+	regressionModel.fit(X_train[:, chosen_features], y_train)
+
+	return regressionModel, chosen_features
 
 
-def query_osm_polygone(lon_query, lat_query, radius, key, value):
-	cur.execute(
-		"SELECT sum(ST_Area(ST_Intersection(geog, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%s, %s),4326)), %s)))) FROM planet_osm_polygon WHERE {} = %s;".format(
-			key),
-		(lon_query, lat_query, radius, value))
-	return cur.fetchone()[0]
+def plot_map(plotModel, features):
+	bounds = sio.loadmat(paths.rootdir + "bounds")['bounds']
+	indus_buffer = []
+	highway_buffer = []
+	for feature in features:
+		if feature <= 29:
+			indus_buffer.append(feature * 50)
+		if (feature > 29) & (feature <= 58):
+			highway_buffer.append((feature - 29) * 50)
+
+	num_indus = len(indus_buffer)
+	num_highway = len(highway_buffer)
+	num_features = len(features)
+
+	gridsize = 100
+	gridhalf = gridsize / 2
+	x = [i for i in range(bounds[0, 0], bounds[0, 1], gridsize)]
+	y = [i for i in range(bounds[0, 2], bounds[0, 3], gridsize)]
+
+	data_plot = np.zeros((len(x), len(y), (3 + num_features)))
+
+	for i in range(len(x)):
+		for j in range(len(y)):
+			data_plot[i, j, 0] = x[i]
+			data_plot[i, j, 1] = y[j]
+
+			lat = CHtoWGSlat(x[i] + gridhalf, y[j] + gridhalf)
+			lon = CHtoWGSlng(x[i] + gridhalf, y[j] + gridhalf)
+
+			for k in range(num_indus):
+				try:
+					temp = query_osm_polygone(lon, lat, indus_buffer[k], "landuse", "industrial")
+				except Exception as e:
+					print(e)
+					print("error")
+					print(lon, lat)
+					temp = 0
+				data_plot[i, j, k + 2] = temp
+
+			for k in range(num_highway):
+				try:
+					temp = query_osm_highway(lon, lat, highway_buffer[k])
+				except Exception as e:
+					print(e)
+					print("error")
+					print(lon, lat)
+					temp = 0
+				data_plot[i, j, k + 2 + num_indus] = temp
+
+				data_plot[i, j, -1] = plotModel.predict(
+					data_plot[i, j, 2:(2 + num_features)].reshape(1, num_features))
+
+	pickle.dump(data_plot, open(paths.lurdata + "pm_01072012_31092012_predicted.p", "wb"))
 
 
-def query_osm_line(lon_query, lat_query, radius, key, value):
-	cur.execute(
-		"SELECT sum(ST_Length(ST_Intersection(geog, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%s, %s),4326)), %s)))) FROM planet_osm_line WHERE {} = %s;".format(
-			key),
-		(lon_query, lat_query, radius, value))
-	return cur.fetchone()[0]
+def cross_validation(X_t, y_t):
+	kf = KFold(n_splits=10)
+	bestModel = None
+	bestScore = 0
 
+	for train, test in kf.split(X_t):
+		X_train, y_train = X_t[train, :], y_t[train]
+		X_test, y_test = X_t[test, :], y_t[test]
+		model = Regressor()
+		model.fit(X_train, y_train)
+		score = model.score(X_test, y_test)
 
-def query_osm_highway(lon_query, lat_query, radius):
-	cur.execute(
-		"SELECT sum(ST_Length(ST_Intersection(geog, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%S, %S),4326)), %S)))) FROM planet_osm_line WHERE highway != NULL;",
-		(lon_query, lat_query, radius))
-	return cur.fetchone()[0]
+		print(score)
 
+		if score > bestScore:
+			bestModel = model
+			bestScore = score
 
-def preproc_land_use(filename):
-	data = sio.loadmat(filename)['data']
-
-	IND_AVG_DATA = 3
-	GEO_ACC = 4
-	print("Shape before cleaning: ", data.shape)
-	data = data[data[:, GEO_ACC] < 3, :]  # Remove inaccurate data
-	data = data[data[:, IND_AVG_DATA] < math.pow(10, 5), :]  # Remove outliers
-	data = data[data[:, IND_AVG_DATA] != 0, :]  # Remove 0-values
-
-	bounds = sio.loadmat(rootdir + "Shared/UFP_Delivery_Lautenschlager/matlab/bounds")['bounds']
-
-	print("Shape after cleaning: ", data.shape)
-
-	LAT = 1
-	LON = 2
-	pm_ha = []
-	for x in range(bounds[0, 0], bounds[0, 1], 100):
-		for y in range(bounds[0, 2], bounds[0, 3], 100):
-
-			# Fetch data in the bounding box
-			temp = data[
-			       (data[:, LAT] >= x) & (data[:, LAT] < (x + 100)) & (data[:, LON] >= y) & (data[:, LON] < (y + 100)),
-			       :]
-			if temp.shape[0] != 0:
-				# Calculate Statistics and dependent variable
-				m = np.mean(temp[:, IND_AVG_DATA])
-				s = np.std(temp[:, IND_AVG_DATA])
-				med = np.median(temp[:, IND_AVG_DATA])
-
-				log = np.log(temp[:, IND_AVG_DATA])
-				# log[log == -float('Inf')] = 0
-				log = log[log != -float('Inf')]
-
-				m_log = np.mean(log)
-				s_log = np.std(log)
-
-				pm_num = [x, y, m, temp.shape[0], s, m_log, s_log, med]
-
-				lat = CHtoWGSlat(y + 50, x + 50)
-				lon = CHtoWGSlng(y + 50, x + 50)
-
-				industry = []
-				highway = []
-				for i in range(50, 1500, 50):
-					try:
-						industry.append(query_osm_polygone(lon, lat, i, "landuse", "industrial"))
-						highway.append(query_osm_highway(lon, lat, i))
-					except:
-						print(x, y)
-						print(lon, lat)
-						industry.append(0)
-						highway.append(0)
-
-				pm_num.extend(industry)
-				pm_num.extend(highway)
-				pm_ha.append(pm_num)
-
-	del data
-
-	LAT = 0
-	LON = 1
-
-	print("Training shape with tram depots: ({}, {})".format(len(pm_ha), len(pm_ha[1])))
-
-	# Tram depots
-	ha_depots = [[681800, 247400], [681700, 247400], [681700, 247500], [681700, 249500], [683700, 251500],
-	             [679400, 248500],
-	             [683400, 249900], [683400, 249800], [682500, 243400]]
-
-	# check if Tram depot in bounding box
-	pm_ha_numpy = np.array(pm_ha)
-	for depot in ha_depots:
-		pm_ha_numpy = pm_ha_numpy[~((pm_ha_numpy[:, LAT] == depot[LAT]) & (pm_ha_numpy[:, LON] == depot[LON])), :]
-
-	pm_ha = pm_ha_numpy.tolist()
-	print("Maximum value {}".format(pm_ha_numpy[:, 9:].max()))
-
-	del pm_ha_numpy
-
-	return pm_ha
-
-
-def classification(train_data):
-	model = LinearRegression()
-	train_data_np = np.array(train_data)
-	scores = cross_val_score(model, train_data_np[:, 8:], train_data_np[:, 2], cv=5)
-	print(scores)
+	print("Best score: {}".format(bestScore))
+	return model.giveModel()
 
 
 if __name__ == "__main__":
-	rootdir = expanduser("~/Data/OpenSense/")
-	datadir = rootdir + "Shared/UFP_Delivery_Lautenschlager/matlab/data/seasonal_maps/filt/"
-	file = "pm_01072012_31092012_filtered.mat"
 
-	pm_ha = preproc_land_use(datadir + file)
+	file = "pm_01072013_31092013_filtered.mat"
 
-	with open(rootdir + file[:-4] + ".csv", 'w') as myfile:
-		wr = csv.writer(myfile)
-		print(myfile.name)
+	data = []
+	with open(paths.lurdata + file[:-4] + "_ha_landUse.csv", 'r') as myfile:
+		reader = csv.reader(myfile)
+		for row in reader:
+			data.append([float(i) for i in row])
 
-		for row in pm_ha:
-			wr.writerow(row)
+	train_data_np = np.array(data)
+	X_train, X_val, y_train, y_val = train_test_split(train_data_np[:, 3:], train_data_np[:, 2], test_size=0.1,
+	                                                  random_state=42)
 
-	classification(pm_ha)
+	model = cross_validation(X_train, y_train)
+	#model, features = regression(X_train, y_train)
+	features = model.features
+
+	pred = model.predict(X_val[:, features])
+
+	r2 = r2_score(y_val, pred)
+	rmse = math.sqrt(mean_squared_error(y_val, pred))
+	print("r2 on validation data: {}".format(r2))
+	print("rmse on validation data: {}".format(rmse))
+
+	pickle.dump({'model': model, 'features': features, 'r2': r2, 'rmse': rmse},
+	            open(paths.lurdata + "models/" + file[:-4] + "_landUseModel.p", 'wb'))

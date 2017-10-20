@@ -112,7 +112,13 @@ pm_ha_numpy = np.array(pm_ha)
 from pygam import LinearGAM
 from pygam.utils import generate_X_grid
 
-gam = LinearGAM(n_splines=10).gridsearch(pm_ha_numpy[:,-16:], pm_ha_numpy[:,2])
-XX = generate_X_grid(gam)
+# gam = LinearGAM(n_splines=10).gridsearch(pm_ha_numpy[:,-16:], pm_ha_numpy[:,2])
+# XX = generate_X_grid(gam)
 
-gam.summary()
+# gam.summary()
+
+# print(gam.accuracy(pm_ha_numpy[:,-16:], pm_ha_numpy[:,2]))
+
+from sklearn.model_selection import cross_val_score
+gam = LinearGAM(n_splines=10)
+scores = cross_val_score(model, train_data_np[:, 8:], train_data_np[:, 2], cv=5)
