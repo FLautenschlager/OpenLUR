@@ -3,7 +3,12 @@ from os.path import expanduser
 rootdir = expanduser('~/Data/OpenSense/Shared/UFP_Delivery_Lautenschlager/matlab/')
 datadir = rootdir + 'data/seasonal_maps/'
 filtereddatadir = datadir + 'filt/'
-hadata = datadir + 'ha/'
+hadatadir = datadir + 'ha/'
+extdatadir = datadir + 'ext/'
+modeldatadir = datadir + 'model/'
+landusedir = rootdir + 'landuse_data/'
+rdir = rootdir + '../R/'
 lurdata = datadir + 'lur/'
 bayesiandata = datadir + 'bayes'
-landusedir = rootdir + 'landuse_data/'
+
+
