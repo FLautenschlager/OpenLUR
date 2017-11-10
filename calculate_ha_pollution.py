@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import paths
 import argparse
 import scipy.io as sio
@@ -40,23 +41,44 @@ def calculate_ha_pollution(data, bounds, LAT=1, LON=2, IND_AVG_DATA=3):
     pm_ha_numpy = np.array(pm_ha)
     return pm_ha_numpy
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('input_file', help='Input file')
     args = parser.parse_args()
 
-    # This expects a .mat file
-    data = sio.loadmat(args.input_file)['data']
+    data = None
+
     bounds = sio.loadmat(paths.rootdir + 'bounds')['bounds'][0]
 
-    cleaned_data = clean_data(data)
+    if args.input_file[-4:] == '.mat':
+        data = sio.loadmat(args.input_file)['data']
+        cleaned_data = clean_data(data)
+    elif args.input_file[-4:] == '.csv':
+        data = pd.read_csv(args.input_file)
+        cleaned_data = clean_data(data.iloc, IND_AVG_DATA=data.columns.get_loc(
+            'particleNumber'), IND_GEO_ACC=data.columns.get_loc('GPSPrecision'))
+
+    else:
+        print('File type "{ft}" not supported'.format(ft=args.input_file[-4:]))
 
     # Use default columns for LAT, LON and IND_AVG_DATA
     pm_ha_data = calculate_ha_pollution(cleaned_data, bounds)
 
+    # Put data in a pandas DataFrame
+    pm_ha_data_df = df.DataFrame(pm_ha_data)
+    pm_ha_data_df.columns = ['x', 'y', 'pm_measurement',
+                             'pm_measurement_length', 'pm_std', 'pm_mean_log',
+                             'pm_std_log', 'pm_median', 'population',
+                             'industry', 'floorlevel', 'heating',
+                             'elevation', 'streetsize', 'signaldist',
+                             'streetdist', 'slope', 'expo', 'traffic',
+                             'streetdist_m', 'streetdist_l',
+                             'trafficdist_l', 'trafficdist_h',
+                             'traffic_tot']
+
     # Cut the '.mat' from the mat's filename and append '_ha.csv'
     new_filename = args.input_file[:-4] + '_ha.csv'
 
-    with open(new_filename, 'w') as f:
-        writer = csv.writer(f)
-        writer.writerows(pm_ha_data)
+    # Write file
+    pm_ha_data_df.to_csv(new_filename)

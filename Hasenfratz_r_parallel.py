@@ -2,15 +2,35 @@ import scipy.io as sio
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
+from sklearn.metrics import r2_score, mean_squared_error
 import paths
 from multiprocessing import Pool, cpu_count
 import argparse
+import pickle
 
 import rpy2.robjects as robjects
 from rpy2.robjects import FloatVector, pandas2ri
 from rpy2.robjects.packages import importr
 
-def calculate_gam(inputs):
+FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
+                'streetsize', 'traffic_tot', 'streetdist_l']
+
+def build_formula_string(feature_cols):
+    smooth_template = 's({feature_col},bs="cr",k=3)'
+    formula = 'pm_measurement~'
+
+    for feature_col in feature_cols:
+        # streetsize is not smoothed in Hasenfratz's original work
+        if feature_col is 'streetsize':
+            formula += feature_col + '+'
+        else:
+            formula += smooth_template.format(feature_col=feature_col) + '+'
+
+    # Remove the last '+'
+    return formula[:-1]
+
+
+def calculate_gam(inputs, feature_cols):
     train_calib_data, test_calib_data, test_model_var = inputs
 
     # mgcv is the R package with the GAM implementation
@@ -27,10 +47,11 @@ def calculate_gam(inputs):
     # "bs" is the basis of the used smooth class
     # "cr" declares a cubic spline basis
     # "k" defines the dimension of the basis (upper limit on degrees of freedom)
-    formula = robjects.Formula('pm_measurement~s(industry,bs="cr",k=3)' +
-        '+s(floorlevel,bs="cr",k=3)+s(elevation,bs="cr",k=3)' +
-        '+s(slope,bs="cr",k=3)+s(expo,bs="cr",k=3)+streetsize' +
-        '+s(traffic_tot,bs="cr",k=3)+s(streetdist_l,bs="cr",k=3)')
+    # formula = robjects.Formula('pm_measurement~s(industry,bs="cr",k=3)' +
+    #     '+s(floorlevel,bs="cr",k=3)+s(elevation,bs="cr",k=3)' +
+    #     '+s(slope,bs="cr",k=3)+s(expo,bs="cr",k=3)+streetsize' +
+    #     '+s(traffic_tot,bs="cr",k=3)+s(streetdist_l,bs="cr",k=3)')
+    formula = robjects.Formula(build_formula_string(feature_cols))
     # Hasenfratz uses a Gamma distribution with a logarithmic link
     family = stats.Gamma(link='log')
 
@@ -45,7 +66,7 @@ def calculate_gam(inputs):
     # Create a DataFrame where it is easily possible to compare measurements and
     # predictions
     test_measure_predict = test_calib_data.merge(
-        test_model_var_predictions, how='inner', on=['x', 'y']
+        test_model_var_predictions[['x', 'y', 'prediction']], how='inner', on=['x', 'y']
         )#[['x', 'y', 'pm_measurement', 'prediction']]
     # Check how large the error is with the remaining 10% of data
     error_model = test_measure_predict['pm_measurement'] - \
@@ -71,32 +92,10 @@ def calculate_gam(inputs):
     lt1 = stats.lm(r2val_formula)
     rsqval = base.summary(lt1).rx2('r.squared')
 
-    # Return metrics
-    return rmse, rsq, rsqval, devexpl, fac2
+    # Return metrics and predicted values
+    return rmse, rsq, rsqval, devexpl, fac2, test_measure_predict
 
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-j', '--jobs', default=cpu_count(), type=int, help='Specifies the number of jobs to run simultaneously.')
-    args = parser.parse_args()
-
-    # Load data
-    pm_ha = sio.loadmat(paths.extdatadir +
-                        'pm_ha_ext_01042012_30062012.mat')['pm_ha']
-
-    # Prepare data
-    data_1 = pd.DataFrame(pm_ha[:, :3])
-    data_2 = pd.DataFrame(pm_ha[:, 7:])
-    calib_data = pd.concat([data_1, data_2], axis=1)
-    calib_data.columns = ["x", "y", "pm_measurement", "population", "industry", "floorlevel", "heating", "elevation", "streetsize",
-                          "signaldist", "streetdist", "slope", "expo", "traffic", "streetdist_m", "streetdist_l", "trafficdist_l", "trafficdist_h", "traffic_tot"]
-
-    model_var = pd.DataFrame(sio.loadmat(
-        paths.rdir + 'model_ha_variables.mat')['model_variables'])
-    model_var.columns = ["x", "y", "population", "industry", "floorlevel", "heating", "elevation", "streetsize", "signaldist",
-                         "streetdist", "slope", "expo", "traffic", "streetdist_m", "streetdist_l", "trafficdist_l", "trafficdist_h", "traffic_tot"]
-
+def cross_validate(calib_data, model_var, feature_cols=FEATURE_COLS):
     # Select test and training dataset for 10 fold cross validation
     kf = KFold(n_splits=10, shuffle=True)
 
@@ -134,7 +133,7 @@ if __name__ == '__main__':
     # returns rmse, rsq, rsqval, devexpl, fac2
     results = pd.DataFrame(pool.map(calculate_gam, gam_inputs))
 
-    results.columns = ['rmse', 'rsq', 'rsqval', 'devexpl', 'fac2']
+    results.columns = ['rmse', 'rsq', 'rsqval', 'devexpl', 'fac2', 'predictions']
 
     # Calculate Root-mean-square error model
     rmse_model.append(results['rmse'])
@@ -147,9 +146,76 @@ if __name__ == '__main__':
     # calculate R2 between predicted and measured concentration
     rsqval_model.append(results['rsqval'])
 
+    print(results['predictions'][0])
+    predictions = pd.concat(results['predictions'].values.tolist())
+    predictions = predictions.set_index(['x', 'y'])
+    print(predictions)
+
+    pickle.dump(predictions, open('hasenfratz_results.p', 'wb'))
+
+    skl_rmse = np.sqrt(mean_squared_error(predictions['pm_measurement'], predictions['prediction']))
+    skl_rsq_val = r2_score(predictions['pm_measurement'], predictions['prediction'])
+
+    # Calculate adjusted R²: rsq-(1-rsq)*p/(n-p-1)
+    p = len(feature_cols)
+    n = len(calib_data)
+    ajd_skl_rsq_val = skl_rsq_val-(1-skl_rsq_val)*p/(n-p-1)
+
 
     print('Root-mean-square error:', np.mean(rmse_model), 'particles/cm^3')
     print('R2:', np.mean(rsq_model))
     print('R2-val:', np.mean(rsqval_model))
+    print('Sklearn R2-val:', skl_rsq_val)
+    print('Adjusted Sklearn R2-val:', adj_skl_rsq_val)
     print('DevExpl:', np.mean(devexpl_model) * 100)
     print('FAC2:', np.mean(fac2_model))
+
+    return {
+        'mean-batch-rmse': np.mean(rmse_model),
+        'rmse': skl_rmse,
+        'mean-batch-rsq': np.mean(rsq_model),
+        'mean-batch-rsq-val': np.mean(rsqval_model),
+        'rsq-val': skl_rsq_val,
+        'adj-rsq-val': adj_skl_rsq_val,
+        'devexpl': np.mean(devexpl_model) * 100,
+        'fac2': np.mean(fac2_model),
+        'predictions': predictions}
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-j', '--jobs', default=cpu_count(), type=int, help='Specifies the number of jobs to run simultaneously.')
+    parser.add_argument('-c', '--cross', action='store_true',
+                        help='Train and evaluate neural network with 10-fold cross validation.')
+    parser.add_argument('-b', '--batch_cross', action='store_true',
+                        help='Train and evaluate batches of neural networks with 10-fold cross validation.')
+    args = parser.parse_args()
+
+    if args.cross is True:
+        # Load data
+        pm_ha = sio.loadmat(paths.extdatadir +
+                            'pm_ha_ext_01102012_31122012.mat')['pm_ha']#'pm_ha_ext_01042012_30062012.mat')['pm_ha']
+
+        # Prepare data
+        data_1 = pd.DataFrame(pm_ha[:, :3])
+        data_2 = pd.DataFrame(pm_ha[:, 7:])
+        calib_data = pd.concat([data_1, data_2], axis=1)
+        calib_data.columns = ['x', 'y', 'pm_measurement', 'population', 'industry', 'floorlevel', 'heating', 'elevation', 'streetsize',
+                              'signaldist', 'streetdist', 'slope', 'expo', 'traffic', 'streetdist_m', 'streetdist_l', 'trafficdist_l', 'trafficdist_h', 'traffic_tot']
+
+        model_var = pd.DataFrame(sio.loadmat(
+            paths.rdir + 'model_ha_variables.mat')['model_variables'])
+        model_var.columns = ['x', 'y', 'population', 'industry', 'floorlevel', 'heating', 'elevation', 'streetsize', 'signaldist',
+                             'streetdist', 'slope', 'expo', 'traffic', 'streetdist_m', 'streetdist_l', 'trafficdist_l', 'trafficdist_h', 'traffic_tot']
+
+        cross_validate(calib_data, model_var)
+
+    # run_info = {
+    #     'source': 'Hasenfratz',
+    #     'feature_cols': FEATURE_COLS,
+    #     'tiles': len(calib_data),
+    #     'timeframe': '01072012_31092012'
+    # }
+
+    print(build_formula_string(FEATURE_COLS))
