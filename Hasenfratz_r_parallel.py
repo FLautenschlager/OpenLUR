@@ -2,7 +2,7 @@ import scipy.io as sio
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
-from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 import paths
 from multiprocessing import Pool, cpu_count
 import argparse
@@ -76,6 +76,8 @@ def calculate_gam(inputs):
     error_model = error_model.dropna()
     # Calculate Root-mean-square error model
     rmse = np.sqrt(np.mean(error_model**2))
+    # Calculate mean-absolute error
+    mae = np.mean(np.abs(error_model))
     # Get R² from summary
     rsq = su.rx2('r.sq')
     devexpl = su.rx2('dev.expl')
@@ -94,13 +96,14 @@ def calculate_gam(inputs):
     rsqval = base.summary(lt1).rx2('r.squared')
 
     # Return metrics and predicted values
-    return rmse, rsq, rsqval, devexpl, fac2, test_measure_predict
+    return rmse, mae, rsq, rsqval, devexpl, fac2, test_measure_predict
 
 def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repeat=40,):
     # Select test and training dataset for 10 fold cross validation
     kf = KFold(n_splits=10, shuffle=True)
 
     rmse_model = []
+    mae_model = []
     rsq_model = []
     devexpl_model = []
     fac2_model = []
@@ -140,6 +143,8 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
         return {
             'mean-batch-rmse': None,
             'rmse': None,
+            'mean-batch_mae': None,
+            'mae': None,
             'mean-batch-rsq': None,
             'mean-batch-rsq-val': None,
             'rsq-val': None,
@@ -151,10 +156,11 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
 
     pool.close()
 
-    results.columns = ['rmse', 'rsq', 'rsqval', 'devexpl', 'fac2', 'predictions']
+    results.columns = ['rmse', 'mae', 'rsq', 'rsqval', 'devexpl', 'fac2', 'predictions']
 
     # Calculate Root-mean-square error model
     rmse_model.append(results['rmse'])
+    mae_model.append(results['mae'])
     # Get R² from summary
     rsq_model.append(results['rsq'])
     devexpl_model.append(results['devexpl'])
@@ -172,6 +178,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
     pickle.dump(predictions, open('hasenfratz_results.p', 'wb'))
 
     skl_rmse = np.sqrt(mean_squared_error(predictions['pm_measurement'], predictions['prediction']))
+    skl_mae = mean_absolute_error(predictions['pm_measurement'], predictions['prediction']))
     skl_rsq_val = r2_score(predictions['pm_measurement'], predictions['prediction'])
 
     # Calculate adjusted R²: rsq-(1-rsq)*p/(n-p-1)
@@ -181,6 +188,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
 
 
     print('Root-mean-square error:', np.mean(rmse_model), 'particles/cm^3')
+    print('Mean-absolute error:', np.mean(mae_model))
     print('R2:', np.mean(rsq_model))
     print('R2-val:', np.mean(rsqval_model))
     print('Sklearn R2-val:', skl_rsq_val)
@@ -191,6 +199,8 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
     return {
         'mean-batch-rmse': np.mean(rmse_model),
         'rmse': skl_rmse,
+        'mean-batch-mae': np.mean(mae_model),
+        'mae': skl_mae,
         'mean-batch-rsq': np.mean(rsq_model),
         'mean-batch-rsq-val': np.mean(rsqval_model),
         'rsq-val': skl_rsq_val,
