@@ -150,7 +150,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
             'rsq-val': None,
             'adj-rsq-val': None,
             'devexpl': None,
-            'fac2': None,
+            'mean-batch-fac2': None,
             'predictions': None}
 
 
@@ -186,6 +186,12 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
     n = len(calib_data)
     adj_skl_rsq_val = skl_rsq_val-(1-skl_rsq_val)*p/(n-p-1)
 
+    # Calculate Factor of 2 metric
+    fac2_ind = predictions['pm_measurement'] / \
+        predictions['prediction']
+    fac2_ind = fac2_ind[(fac2_ind <= 2) & (fac2_ind >= 0.5)].dropna()
+    fac2 = (len(fac2_ind) / len(predictions['pm_measurement']) * 100)
+
 
     print('Root-mean-square error:', np.mean(rmse_model), 'particles/cm^3')
     print('Mean-absolute error:', np.mean(mae_model))
@@ -206,7 +212,8 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
         'rsq-val': skl_rsq_val,
         'adj-rsq-val': adj_skl_rsq_val,
         'devexpl': np.mean(devexpl_model) * 100,
-        'fac2': np.mean(fac2_model),
+        'fac2': fac2,
+        'mean-batch-fac2': np.mean(fac2_model),
         'predictions': predictions}
 
 
