@@ -9,6 +9,6 @@ modeldatadir = datadir + 'model/'
 landusedir = rootdir + 'landuse_data/'
 rdir = rootdir + '../R/'
 lurdata = datadir + 'lur/'
-bayesiandata = datadir + 'bayes'
+bayesiandata = datadir + 'bayes/'
 
 
