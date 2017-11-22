@@ -178,7 +178,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
     pickle.dump(predictions, open('hasenfratz_results.p', 'wb'))
 
     skl_rmse = np.sqrt(mean_squared_error(predictions['pm_measurement'], predictions['prediction']))
-    skl_mae = mean_absolute_error(predictions['pm_measurement'], predictions['prediction']))
+    skl_mae = mean_absolute_error(predictions['pm_measurement'], predictions['prediction'])
     skl_rsq_val = r2_score(predictions['pm_measurement'], predictions['prediction'])
 
     # Calculate adjusted R²: rsq-(1-rsq)*p/(n-p-1)
