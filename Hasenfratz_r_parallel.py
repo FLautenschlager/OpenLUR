@@ -1,4 +1,5 @@
 import scipy.io as sio
+import os
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
@@ -15,6 +16,7 @@ from rpy2.rinterface import RRuntimeError
 
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
+RESULTS_FILE_NAME = 'tiles_features_batchcv_hasenfratz_kek.csv'
 
 def build_formula_string(feature_cols):
     smooth_template = 's({feature_col},bs="cr",k=3)'
@@ -298,8 +300,6 @@ if __name__ == '__main__':
                 'streetdist_m', 'trafficdist_l', 'trafficdist_h']
         ]
 
-        results_list = []
-
         for feature_cols in feature_cols_list:
             for calib_file in calib_files:
                 # Load new data set from file
@@ -334,8 +334,16 @@ if __name__ == '__main__':
                 # outputting to csv
                 del results['predictions']
 
-                # Store results in a list
-                results_list.append(results)
+                # The initial write has to write the column headers if the file doesn't
+                # exist yet
+                initial_write = not os.path.isfile(RESULTS_FILE_NAME)
 
-        results_list_df = pd.DataFrame(results_list)
-        results_list_df.to_csv('tiles_features_batchcv_hasenfratz.csv', mode='a', index=False)
+                # Write result to file and retry indefinitely if it failed
+                while True:
+                    try:
+                        pd.DataFrame([results]).to_csv(RESULTS_FILE_NAME, mode='a', header=initial_write, index=False)
+                    except:
+                        continue
+                    break
+
+                initial_write = False
