@@ -81,8 +81,8 @@ def calculate_gam(inputs):
     # Calculate mean-absolute error
     mae = np.mean(np.abs(error_model))
     # Get R² from summary
-    rsq = su.rx2('r.sq')
-    devexpl = su.rx2('dev.expl')
+    rsq = su.rx2('r.sq')[0]
+    devexpl = su.rx2('dev.expl')[0]
     # Calculate Factor of 2
     fac2_ind = test_measure_predict['pm_measurement'] / \
         test_measure_predict['prediction']
@@ -95,7 +95,7 @@ def calculate_gam(inputs):
     r2val_env['measurements'] = test_measure_predict['pm_measurement']
     r2val_env['predictions'] = test_measure_predict['prediction']
     lt1 = stats.lm(r2val_formula)
-    rsqval = base.summary(lt1).rx2('r.squared')
+    rsqval = base.summary(lt1).rx2('r.squared')[0]
 
     # Calculate adjusted R²: rsq-(1-rsq)*p/(n-p-1)
     p = len(feature_cols)
@@ -165,7 +165,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
 
     pool.close()
 
-    results.columns = ['rmse', 'mae', 'rsq', 'rsqval', 'adj-rsqval' 'devexpl', 'fac2', 'predictions']
+    results.columns = ['rmse', 'mae', 'rsq', 'rsqval', 'adj-rsqval', 'devexpl', 'fac2', 'predictions']
 
     # Calculate Root-mean-square error model
     rmse_model.append(results['rmse'])
