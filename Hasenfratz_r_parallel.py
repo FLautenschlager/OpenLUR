@@ -16,7 +16,7 @@ from rpy2.rinterface import RRuntimeError
 
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
-RESULTS_FILE_NAME = 'tiles_features_batchcv_hasenfratz_kek.csv'
+RESULTS_FILE_NAME = 'tiles_features_batchcv_hasenfratz.csv'
 
 def build_formula_string(feature_cols):
     smooth_template = 's({feature_col},bs="cr",k=3)'
@@ -97,8 +97,13 @@ def calculate_gam(inputs):
     lt1 = stats.lm(r2val_formula)
     rsqval = base.summary(lt1).rx2('r.squared')
 
+    # Calculate adjusted R²: rsq-(1-rsq)*p/(n-p-1)
+    p = len(feature_cols)
+    n = len(train_calib_data) + len(test_calib_data)
+    adj_rsqval = rsqval-(1-rsqval)*p/(n-p-1)
+
     # Return metrics and predicted values
-    return rmse, mae, rsq, rsqval, devexpl, fac2, test_measure_predict
+    return rmse, mae, rsq, rsqval, adj_rsqval, devexpl, fac2, test_measure_predict
 
 def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repeat=40,):
     # Select test and training dataset for 10 fold cross validation
@@ -109,6 +114,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
     rsq_model = []
     devexpl_model = []
     fac2_model = []
+    adj_rsqval_model = []
     rsqval_model = []
 
     gam_inputs = []
@@ -150,6 +156,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
             'mean-batch-rsq': None,
             'mean-batch-rsq-val': None,
             'rsq-val': None,
+            'mean-batch-adj-rsq-val': None,
             'adj-rsq-val': None,
             'devexpl': None,
             'mean-batch-fac2': None,
@@ -158,7 +165,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
 
     pool.close()
 
-    results.columns = ['rmse', 'mae', 'rsq', 'rsqval', 'devexpl', 'fac2', 'predictions']
+    results.columns = ['rmse', 'mae', 'rsq', 'rsqval', 'adj-rsqval' 'devexpl', 'fac2', 'predictions']
 
     # Calculate Root-mean-square error model
     rmse_model.append(results['rmse'])
@@ -171,6 +178,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
 
     # calculate R2 between predicted and measured concentration
     rsqval_model.append(results['rsqval'])
+    adj_rsqval_model.append(results['adj-rsqval'])
 
     print(results['predictions'][0])
     predictions = pd.concat(results['predictions'].values.tolist())
@@ -212,6 +220,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
         'mean-batch-rsq': np.mean(rsq_model),
         'mean-batch-rsq-val': np.mean(rsqval_model),
         'rsq-val': skl_rsq_val,
+        'mean-batch-adj-rsq-val': np.mean(adj_rsqval_model),
         'adj-rsq-val': adj_skl_rsq_val,
         'devexpl': np.mean(devexpl_model) * 100,
         'fac2': fac2,
