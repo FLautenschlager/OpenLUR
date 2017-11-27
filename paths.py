@@ -1,16 +1,14 @@
-from os.path import expanduser
+from os.path import expanduser, join
 
-homedir = expanduser("~/")
-rootdir = '/home/ls6/lautenschlager/OpenSense/UFP_Delivery_Lautenschlager/matlab/'
-# rootdir = expanduser('~/Data/OpenSense/Shared/UFP_Delivery_Lautenschlager/matlab/')
-datadir = rootdir + 'data/seasonal_maps/'
-filtereddatadir = datadir + 'filt/'
-hadatadir = datadir + 'ha/'
-extdatadir = datadir + 'ext/'
-modeldatadir = datadir + 'model/'
-landusedir = rootdir + 'landuse_data/'
-rdir = rootdir + '../R/'
-lurdata = datadir + 'lur/'
-bayesiandata = datadir + 'bayes/'
-
-
+# The last '' ensures that the paths have a trailing slash (os independent)
+rootdir = expanduser(join('~', 'Data', 'OpenSense', 'Shared',
+                          'UFP_Delivery_Lautenschlager', 'matlab', ''))
+datadir = join(rootdir, 'data', 'seasonal_maps', '')
+filtereddatadir = join(datadir, 'filt', '')
+hadatadir = join(datadir, 'ha', '')
+extdatadir = join(datadir, 'ext', '')
+modeldatadir = join(datadir, 'model', '')
+landusedir = join(rootdir, 'landuse_data', '')
+rdir = join(rootdir, '..', 'R', '')
+lurdata = join(datadir, 'lur', '')
+bayesiandata = join(datadir, 'bayes', '')

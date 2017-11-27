@@ -1,4 +1,5 @@
 import scipy.io as sio
+import os
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
@@ -15,6 +16,7 @@ from rpy2.rinterface import RRuntimeError
 
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
+RESULTS_FILE_NAME = 'tiles_features_batchcv_hasenfratz.csv'
 
 def build_formula_string(feature_cols):
     smooth_template = 's({feature_col},bs="cr",k=3)'
@@ -79,8 +81,8 @@ def calculate_gam(inputs):
     # Calculate mean-absolute error
     mae = np.mean(np.abs(error_model))
     # Get R² from summary
-    rsq = su.rx2('r.sq')
-    devexpl = su.rx2('dev.expl')
+    rsq = su.rx2('r.sq')[0]
+    devexpl = su.rx2('dev.expl')[0]
     # Calculate Factor of 2
     fac2_ind = test_measure_predict['pm_measurement'] / \
         test_measure_predict['prediction']
@@ -93,10 +95,15 @@ def calculate_gam(inputs):
     r2val_env['measurements'] = test_measure_predict['pm_measurement']
     r2val_env['predictions'] = test_measure_predict['prediction']
     lt1 = stats.lm(r2val_formula)
-    rsqval = base.summary(lt1).rx2('r.squared')
+    rsqval = base.summary(lt1).rx2('r.squared')[0]
+
+    # Calculate adjusted R²: rsq-(1-rsq)*p/(n-p-1)
+    p = len(feature_cols)
+    n = len(train_calib_data) + len(test_calib_data)
+    adj_rsqval = rsqval-(1-rsqval)*p/(n-p-1)
 
     # Return metrics and predicted values
-    return rmse, mae, rsq, rsqval, devexpl, fac2, test_measure_predict
+    return rmse, mae, rsq, rsqval, adj_rsqval, devexpl, fac2, test_measure_predict
 
 def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repeat=40,):
     # Select test and training dataset for 10 fold cross validation
@@ -107,6 +114,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
     rsq_model = []
     devexpl_model = []
     fac2_model = []
+    adj_rsqval_model = []
     rsqval_model = []
 
     gam_inputs = []
@@ -148,6 +156,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
             'mean-batch-rsq': None,
             'mean-batch-rsq-val': None,
             'rsq-val': None,
+            'mean-batch-adj-rsq-val': None,
             'adj-rsq-val': None,
             'devexpl': None,
             'mean-batch-fac2': None,
@@ -156,7 +165,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
 
     pool.close()
 
-    results.columns = ['rmse', 'mae', 'rsq', 'rsqval', 'devexpl', 'fac2', 'predictions']
+    results.columns = ['rmse', 'mae', 'rsq', 'rsqval', 'adj-rsqval', 'devexpl', 'fac2', 'predictions']
 
     # Calculate Root-mean-square error model
     rmse_model.append(results['rmse'])
@@ -169,6 +178,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
 
     # calculate R2 between predicted and measured concentration
     rsqval_model.append(results['rsqval'])
+    adj_rsqval_model.append(results['adj-rsqval'])
 
     print(results['predictions'][0])
     predictions = pd.concat(results['predictions'].values.tolist())
@@ -178,7 +188,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
     pickle.dump(predictions, open('hasenfratz_results.p', 'wb'))
 
     skl_rmse = np.sqrt(mean_squared_error(predictions['pm_measurement'], predictions['prediction']))
-    skl_mae = mean_absolute_error(predictions['pm_measurement'], predictions['prediction']))
+    skl_mae = mean_absolute_error(predictions['pm_measurement'], predictions['prediction'])
     skl_rsq_val = r2_score(predictions['pm_measurement'], predictions['prediction'])
 
     # Calculate adjusted R²: rsq-(1-rsq)*p/(n-p-1)
@@ -210,6 +220,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
         'mean-batch-rsq': np.mean(rsq_model),
         'mean-batch-rsq-val': np.mean(rsqval_model),
         'rsq-val': skl_rsq_val,
+        'mean-batch-adj-rsq-val': np.mean(adj_rsqval_model),
         'adj-rsq-val': adj_skl_rsq_val,
         'devexpl': np.mean(devexpl_model) * 100,
         'fac2': fac2,
@@ -298,8 +309,6 @@ if __name__ == '__main__':
                 'streetdist_m', 'trafficdist_l', 'trafficdist_h']
         ]
 
-        results_list = []
-
         for feature_cols in feature_cols_list:
             for calib_file in calib_files:
                 # Load new data set from file
@@ -334,8 +343,16 @@ if __name__ == '__main__':
                 # outputting to csv
                 del results['predictions']
 
-                # Store results in a list
-                results_list.append(results)
+                # The initial write has to write the column headers if the file doesn't
+                # exist yet
+                initial_write = not os.path.isfile(RESULTS_FILE_NAME)
 
-        results_list_df = pd.DataFrame(results_list)
-        results_list_df.to_csv('tiles_features_batchcv_hasenfratz.csv', mode='a', index=False)
+                # Write result to file and retry indefinitely if it failed
+                while True:
+                    try:
+                        pd.DataFrame([results]).to_csv(RESULTS_FILE_NAME, mode='a', header=initial_write, index=False)
+                    except:
+                        continue
+                    break
+
+                initial_write = False
