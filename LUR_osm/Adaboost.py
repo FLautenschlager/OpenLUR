@@ -13,6 +13,10 @@ import paths
 import numpy as np
 import argparse
 import csv
+import mysql.connector
+from mysql.connector import errorcode
+import datetime
+import re
 
 
 def cross_validation(X_t, y_t):
@@ -31,9 +35,13 @@ def cross_validation(X_t, y_t):
 		preprocessor = PolynomialFeatures(degree=2, interaction_only=True, include_bias=True)
 		regressor = AdaBoostRegressor(n_estimators=489, learning_rate=1.0696244587757953, loss='exponential', )
 
-		pipe = Pipeline(
-			[('Imputer', imputer), ('Scaler', scaler), ('Preprocessor', preprocessor), ('Regressor', regressor)])
+		p = [('Imputer', imputer), ('Scaler', scaler)]
 
+		if args.preprocessing:
+			p.append(('Preprocessor', preprocessor))
+		p.append(('Regressor', regressor))
+
+		pipe = Pipeline(p)
 		pipe.fit(X_train, y_train)
 
 		pred = pipe.predict(X_test)
@@ -55,21 +63,32 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-f", "--file", help="Define an input file.")
+	parser.add_argument("-n", "--fileNumber", help="Number of season instead of file", type=int)
 	parser.add_argument("-i", "--iterations", help="Number of iterations to mean on", type=int)
+	parser.add_argument("-p", "--preprocessing", help="Use polynomial preprocessing")
+	parser.add_argument("-d", "--distances", help="use distances as features")
 
 	args = parser.parse_args()
 
-
-
+	files = ["pm_ha_ext_01042012_30062012_landUse.csv", "pm_ha_ext_01072012_31092012_landUse.csv",
+	         "pm_ha_ext_01102012_31122012_landUse.csv", "pm_ha_ext_01012013_31032013_landUse.csv"]
 
 	if args.file:
 		file = args.file
 	else:
-		file = "pm_ha_ext_01012013_31032013_landUse.csv"
-		# file = "pm_ha_ext_01042012_30062012_landUse.csv"
-		# file = "pm_ha_ext_01072012_31092012_landUse.csv"
-		# file = "pm_ha_ext_01102012_31122012_landUse.csv"
+		if args.fileNumber:
+			file = files[args.fileNumber]
+		else:
+			file = files[0]
 
+	dataset = re.search("[0-9]{8}_[0-9]{8}", file).group(0)
+
+	feat = "OSM land use"
+	if args.distances:
+		file = files[:-4] + "_withDistances.csv"
+		feat = feat + " + distances"
+
+	print(file)
 
 	if args.iterations:
 		iterations = args.iterations
@@ -92,10 +111,47 @@ if __name__ == "__main__":
 	r2_total = []
 	mae_total = []
 	rmse_total = []
-	for _ in range(iterations):
+	for k in range(iterations):
+		print("Iteration k:")
 		r2, mae, rmse = cross_validation(X_train, y_train)
 		r2_total.append(r2)
 		mae_total.append(mae)
 		rmse_total.append(rmse)
+		print("\n")
 
+	print("Final results:")
 	print("R2 = {}\nMAE = {}\nRMSE = {}".format(np.mean(r2_total), np.mean(mae_total), np.mean(rmse_total)))
+
+	try:
+		cnx = mysql.connector.connect(user='lautenschlager', password='Arschloch9!', host='localhost',
+		                              database='lautenschlager_db')
+	except mysql.connector.Error as err:
+		if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+			print("Something is wrong with your user name or password")
+		elif err.errno == errorcode.ER_BAD_DB_ERROR:
+			print("Database does not exist")
+		else:
+			print(err)
+	else:
+		cursor = cnx.cursor()
+		add_row = ("INSERT INTO lur_osm"
+		           "(timestamp, data, features, preprocessing, regressor, cv_iterations, r_squared, rmse, mae)"
+		           "VALUES (%S, %S, %S, %S, %S, %S, %S, %S, %S)")
+
+		values = []
+
+		values.append(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+		values.append(dataset)
+		values.append(feat)
+		if args.preprocessing:
+			values.append("polynomial")
+		else:
+			values.append("none")
+		values.append("Adaboost")
+		values.append(args.iterations)
+		values.append(r2_total)
+		values.append(rmse_total)
+		values.append(mae_total)
+		cursor.execute(add_row, values)
+		cursor.close()
+		cnx.close()
