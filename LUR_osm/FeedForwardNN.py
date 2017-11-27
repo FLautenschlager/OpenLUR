@@ -111,7 +111,7 @@ if __name__ == "__main__":
 	if args.iterations:
 		iterations = args.iterations
 	else:
-		iterations = 30
+		iterations = 40
 
 	data = []
 	with open(paths.lurdata + file, 'r') as myfile:

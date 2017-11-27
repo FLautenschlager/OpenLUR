@@ -1,7 +1,3 @@
-import sys
-if "/home/florian/Code/code-2017-land-use" not in sys.path:
-        sys.path.append("/home/florian/Code/code-2017-land-use")
-
 import autosklearn.regression
 import sklearn.model_selection
 import sklearn.metrics

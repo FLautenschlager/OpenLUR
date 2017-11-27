@@ -1,13 +1,6 @@
-import sys
-
-if "/home/florian/Code/code-2017-land-use" not in sys.path:
-	sys.path.append("/home/florian/Code/code-2017-land-use")
-
 import csv
 import scipy.io as sio
 import psycopg2
-import argparse
-import time
 
 import paths
 from wgs84_ch1903 import *
@@ -73,24 +66,6 @@ def query_osm_local_road(lon_query, lat_query, radii):
 	cur.execute(query,tuple(additional_values))
 	return list(cur.fetchone())
 
-def query_osm_line_distance(lon_query, lat_query, key, value):
-	query = "SELECT min(ST_Distance(geog, geography(ST_SetSRID(ST_MakePoint(%s,%s),4326)))) FROM planet_osm_line WHERE {} = %s;".format(key)
-
-	cur.execute(query, (lon_query, lat_query, value))
-	return cur.fetchone()
-
-def query_osm_point_distance(lon_query, lat_query, key, value):
-	query = "SELECT min(ST_Distance(geog, geography(ST_SetSRID(ST_MakePoint(%s,%s),4326)))) FROM planet_osm_point WHERE {} = %s;".format(key)
-
-	cur.execute(query, (lon_query, lat_query, value))
-	return cur.fetchone()
-
-def query_osm_polygon_distance(lon_query, lat_query, key, value):
-	query = "SELECT min(ST_Distance(geog, geography(ST_SetSRID(ST_MakePoint(%s,%s),4326)))) FROM planet_osm_polygon WHERE {} = %s;".format(key)
-
-	cur.execute(query, (lon_query, lat_query, value))
-	return cur.fetchone()
-
 
 
 def create_features(lon, lat):
@@ -103,12 +78,6 @@ def create_features(lon, lat):
 
 		features.extend(query_osm_highway(lon, lat, list(range(50,1550,50))))
 		features.extend(query_osm_local_road(lon, lat, list(range(50,1550,50))))
-
-		features.extend(query_osm_point_distance(lon, lat, 'highway', 'traffic_signals'))
-		features.extend(query_osm_line_distance(lon, lat, 'highway', 'motorway'))
-		features.extend(query_osm_line_distance(lon, lat, 'highway', 'primary'))
-		features.extend(query_osm_polygon_distance(lon, lat, 'landuse', 'industrial'))
-
 	except Exception as e:
 		print(e)
 		print("error")

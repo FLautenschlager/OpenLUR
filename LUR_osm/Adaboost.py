@@ -1,7 +1,10 @@
 import sys
+from os.path import expanduser
+homedir = expanduser("~/")
 
-if "/home/florian/Code/code-2017-land-use" not in sys.path:
-	sys.path.append("/home/florian/Code/code-2017-land-use")
+if (homedir + "code-2017-land-use") not in sys.path:
+	print("Adding path to sys.path: " + homedir + "code-2017-land-use")
+	sys.path.append(homedir + "code-2017-land-use")
 
 from sklearn.preprocessing import PolynomialFeatures, Imputer, Normalizer
 from sklearn.ensemble import AdaBoostRegressor
@@ -35,7 +38,11 @@ def cross_validation(X_t, y_t):
 		preprocessor = PolynomialFeatures(degree=2, interaction_only=True, include_bias=True)
 		regressor = AdaBoostRegressor(n_estimators=489, learning_rate=1.0696244587757953, loss='exponential', )
 
-		p = [('Imputer', imputer), ('Scaler', scaler)]
+		line = [('Imputer', imputer), 
+			('Scaler', scaler), 
+			('Preprocessor', preprocessor), 
+			('Regressor', regressor)]
+		pipe = Pipeline(line)
 
 		if args.preprocessing:
 			p.append(('Preprocessor', preprocessor))
