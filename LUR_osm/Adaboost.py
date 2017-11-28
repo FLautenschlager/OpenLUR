@@ -1,10 +1,5 @@
 import sys
 from os.path import expanduser
-homedir = expanduser("~/")
-
-if (homedir + "code-2017-land-use") not in sys.path:
-	print("Adding path to sys.path: " + homedir + "code-2017-land-use")
-	sys.path.append(homedir + "code-2017-land-use")
 
 from sklearn.preprocessing import PolynomialFeatures, Imputer, Normalizer
 from sklearn.ensemble import AdaBoostRegressor
@@ -12,14 +7,17 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.model_selection import KFold
 
-import paths
 import numpy as np
 import argparse
 import csv
-#import mysql.connector
-#from mysql.connector import errorcode
-import datetime
 import re
+
+homedir = expanduser("~/")
+if (homedir + "code-2017-land-use") not in sys.path:
+	print("Adding path to sys.path: " + homedir + "code-2017-land-use")
+	sys.path.append(homedir + "code-2017-land-use")
+import paths
+import LUR_osm.Saver as Saver
 
 
 def cross_validation(X_t, y_t):
@@ -38,8 +36,8 @@ def cross_validation(X_t, y_t):
 		preprocessor = PolynomialFeatures(degree=2, interaction_only=True, include_bias=True)
 		regressor = AdaBoostRegressor(n_estimators=489, learning_rate=1.0696244587757953, loss='exponential', )
 
-		line = [('Imputer', imputer), 
-			('Scaler', scaler)]
+		line = [('Imputer', imputer),
+		        ('Scaler', scaler)]
 
 		if args.preprocessing:
 			line.append(('Preprocessor', preprocessor))
@@ -116,7 +114,7 @@ if __name__ == "__main__":
 	mae_total = []
 	rmse_total = []
 	for k in range(iterations):
-		print("Iteration {}:".format(k+1))
+		print("Iteration {}:".format(k + 1))
 		r2, mae, rmse = cross_validation(X_train, y_train)
 		r2_total.append(r2)
 		mae_total.append(mae)
@@ -129,36 +127,4 @@ if __name__ == "__main__":
 	print("Final results:")
 	print("R2 = {}\nRMSE = {}\nMAE = {}".format(r2_mean, rmse_mean, mae_mean))
 
-#	try:
-#		cnx = mysql.connector.connect(user='lautenschlager', password='Arschloch9!', host='localhost',
-#		                              database='lautenschlager_db')
-#	except mysql.connector.Error as err:
-#		if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-#			print("Something is wrong with your user name or password")
-#		elif err.errno == errorcode.ER_BAD_DB_ERROR:
-#			print("Database does not exist")
-#		else:
-#			print(err)
-#	else:
-#		cursor = cnx.cursor()
-#		add_row = ("INSERT INTO lur_osm"
-#		           "(timestamp, data, features, preprocessing, regressor, cv_iterations, r_squared, rmse, mae)"
-#		           "VALUES (%S, %S, %S, %S, %S, %S, %S, %S, %S)")
-#
-	values = []
-	values.append(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-	values.append(dataset)
-	values.append(feat)
-	if args.preprocessing:
-		values.append("polynomial")
-	else:
-		values.append("none")
-	values.append("Adaboost")
-	values.append(args.iterations)
-	values.append(r2_mean)
-	values.append(rmse_mean)
-	values.append(mae_mean)
-	print(values)
-#		cursor.execute(add_row, values)
-#		cursor.close()
-#		cnx.close()
+	Saver.saveToDb(dataset, feat, args.preprocessing, "Adaboost", args.iterations, r2_mean, rmse_mean, mae_mean)

@@ -1,17 +1,23 @@
 import sys
+from os.path import expanduser
 
-if "/home/florian/Code/code-2017-land-use" not in sys.path:
-	sys.path.append("/home/florian/Code/code-2017-land-use")
-
-from sklearn.preprocessing import PolynomialFeatures, Imputer, StandardScaler
+from sklearn.preprocessing import PolynomialFeatures, Imputer, Normalizer
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.model_selection import KFold
 
-import paths
 import numpy as np
+import argparse
 import scipy.io as sio
+import re
+
+homedir = expanduser("~/")
+if (homedir + "code-2017-land-use") not in sys.path:
+	print("Adding path to sys.path: " + homedir + "code-2017-land-use")
+	sys.path.append(homedir + "code-2017-land-use")
+import paths
+import LUR_osm.Saver as Saver
 
 
 def cross_validation(X_t, y_t):
@@ -25,14 +31,19 @@ def cross_validation(X_t, y_t):
 		X_train, y_train = X_t[train, :], y_t[train]
 		X_test, y_test = X_t[test, :], y_t[test]
 
-		imputer = Imputer(strategy='most_frequent')
-		scaler = StandardScaler()
+		imputer = Imputer(strategy='mean')
+		scaler = Normalizer()
 		preprocessor = PolynomialFeatures(degree=2, interaction_only=True, include_bias=True)
-		regressor = AdaBoostRegressor(n_estimators=295, learning_rate=0.15423925490619383, loss='linear', )
+		regressor = AdaBoostRegressor(n_estimators=489, learning_rate=1.0696244587757953, loss='exponential', )
 
-		pipe = Pipeline(
-			[('Imputer', imputer), ('Scaler', scaler), ('Polynomial', preprocessor), ('Regressor', regressor)])
+		line = [('Imputer', imputer),
+		        ('Scaler', scaler)]
 
+		if args.preprocessing:
+			line.append(('Preprocessor', preprocessor))
+		line.append(('Regressor', regressor))
+
+		pipe = Pipeline(line)
 		pipe.fit(X_train, y_train)
 
 		pred = pipe.predict(X_test)
@@ -52,12 +63,35 @@ def cross_validation(X_t, y_t):
 
 if __name__ == "__main__":
 
-	file = "pm_ha_ext_01012013_31032013.mat"
-	# file = "pm_ha_ext_01042012_30062012.mat"
-	# file = "pm_ha_ext_01072012_31092012.mat"
-	# file = "pm_ha_ext_01102012_31122012.mat"
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-f", "--file", help="Define an input file.")
+	parser.add_argument("-n", "--fileNumber", help="Number of season instead of file", type=int)
+	parser.add_argument("-i", "--iterations", help="Number of iterations to mean on", type=int)
+	parser.add_argument("-p", "--preprocessing", help="Use polynomial preprocessing", action='store_true')
 
-	iterations = 40
+	args = parser.parse_args()
+
+	files = ["pm_ha_ext_01012013_31032013.mat", "pm_ha_ext_01042012_30062012.mat", "pm_ha_ext_01072012_31092012.mat",
+	         "pm_ha_ext_01102012_31122012.mat"]
+
+	if args.file:
+		file = args.file
+	else:
+		if args.fileNumber:
+			file = files[args.fileNumber]
+		else:
+			file = files[0]
+
+	dataset = re.search("[0-9]{8}_[0-9]{8}", file).group(0)
+
+	feat = "Hasenfratz full"
+
+	print(file)
+
+	if args.iterations:
+		iterations = args.iterations
+	else:
+		iterations = 5
 
 	data = []
 	data = sio.loadmat(paths.extdatadir + 'pm_ha_ext_01042012_30062012.mat')['pm_ha']
@@ -72,10 +106,18 @@ if __name__ == "__main__":
 	r2_total = []
 	mae_total = []
 	rmse_total = []
-	for _ in range(iterations):
+	for k in range(iterations):
+		print("Iteration {}:".format(k + 1))
 		r2, mae, rmse = cross_validation(X_train, y_train)
 		r2_total.append(r2)
 		mae_total.append(mae)
 		rmse_total.append(rmse)
+		print("")
 
-	print("R2 = {}\nMAE = {}\nRMSE = {}".format(np.mean(r2_total), np.mean(mae_total), np.mean(rmse_total)))
+	r2_mean = np.mean(r2_total)
+	mae_mean = np.mean(mae_total)
+	rmse_mean = np.mean(rmse_total)
+	print("Final results:")
+	print("R2 = {}\nRMSE = {}\nMAE = {}".format(r2_mean, rmse_mean, mae_mean))
+
+	Saver.saveToDb(dataset, feat, args.preprocessing, "Adaboost", args.iterations, r2_mean, rmse_mean, mae_mean)
