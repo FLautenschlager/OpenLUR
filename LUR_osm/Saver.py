@@ -1,12 +1,15 @@
 import MySQLdb
 import datetime
+import json
 
 
 def saveToDb(dataset, feat, preproc, regressor, iterations, r2, rmse, mae):
-	db = MySQLdb.connect(host='supergirl',
-	                     user='lautenschlager',
-	                     passwd='Arschloch9!',
-	                     db='lautenschlager_db')
+	cre = json.load(open('../mysqlCredentials.json', 'r'))
+
+	db = MySQLdb.connect(host=cre['host'],
+	                     user=cre['user'],
+	                     passwd=cre['passwd'],
+	                     db=cre['db'])
 
 	cur = db.cursor()
 
