@@ -7,7 +7,7 @@ if (homedir + "code-2017-land-use") not in sys.path:
 	sys.path.append(homedir + "code-2017-land-use")
 
 from sklearn.preprocessing import PolynomialFeatures, Imputer, Normalizer
-from sklearn.ensemble import AdaBoostRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.model_selection import KFold
@@ -36,7 +36,7 @@ def cross_validation(X_t, y_t):
 		imputer = Imputer(strategy='mean')
 		scaler = Normalizer()
 		preprocessor = PolynomialFeatures(degree=2, interaction_only=True, include_bias=True)
-		regressor = AdaBoostRegressor(n_estimators=489, learning_rate=1.0696244587757953, loss='exponential', )
+		regressor = RandomForestRegressor(n_estimators=489)
 
 		line = [('Imputer', imputer), 
 			('Scaler', scaler)]
