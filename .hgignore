@@ -6,6 +6,7 @@ __pycache__
 HeatMapBcc/pyIBCC
 HeatMapBcc/HeatMapBCC
 
+*.json
 *.pyc
 *.png
 ^paths.py$
