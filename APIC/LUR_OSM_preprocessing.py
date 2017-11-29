@@ -1,14 +1,21 @@
-import csv
+import sys
+from os.path import expanduser
 
+import csv
 import argparse
-import scipy.io as sio
+import numpy as np
 import psycopg2
 import time
 
-import paths
-from wgs84_ch1903 import *
+homedir = expanduser("~/")
+if (homedir + "Code/code-2017-land-use") not in sys.path:
+	print("Adding path to sys.path: " + homedir + "code-2017-land-use")
+	sys.path.append(homedir + "Code/code-2017-land-use")
 
-conn = psycopg2.connect(dbname="zurich")
+import paths
+from APIC.local_coordinates import *
+
+conn = psycopg2.connect(dbname="turin")
 cur = conn.cursor()
 
 
@@ -17,7 +24,7 @@ cur = conn.cursor()
 
 def query_osm_polygone(lon_query, lat_query, radii, key, value):
 	query = "SELECT "
-	basic_query = "sum(ST_Area(ST_Intersection(geog, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%s, %s),4326)), %s))))"
+	basic_query = "sum(ST_Area(ST_Intersection(geo, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%s, %s),4326)), %s))))"
 	additional_values = []
 	for radius in radii:
 		query = query + basic_query + " , "
@@ -33,7 +40,7 @@ def query_osm_polygone(lon_query, lat_query, radii, key, value):
 
 def query_osm_line(lon_query, lat_query, radius, key, value):
 	cur.execute(
-		"SELECT sum(ST_Length(ST_Intersection(geog, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%s, %s),4326)), %s)))) FROM planet_osm_line WHERE {} = %s;".format(
+		"SELECT sum(ST_Length(ST_Intersection(geo, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%s, %s),4326)), %s)))) FROM planet_osm_line WHERE {} = %s;".format(
 			key),
 		(lon_query, lat_query, radius, value))
 	return cur.fetchone()[0]
@@ -41,7 +48,7 @@ def query_osm_line(lon_query, lat_query, radius, key, value):
 
 def query_osm_highway(lon_query, lat_query, radii):
 	query = "SELECT "
-	basic_query = "sum(ST_Length(ST_Intersection(geog, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%s, %s),4326)), %s))))"
+	basic_query = "sum(ST_Length(ST_Intersection(geo, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%s, %s),4326)), %s))))"
 	additional_values = []
 	for radius in radii:
 		query = query + basic_query + " , "
@@ -58,7 +65,7 @@ def query_osm_highway(lon_query, lat_query, radii):
 
 def query_osm_local_road(lon_query, lat_query, radii):
 	query = "SELECT "
-	basic_query = "sum(ST_Length(ST_Intersection(geog, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%s, %s),4326)), %s))))"
+	basic_query = "sum(ST_Length(ST_Intersection(geo, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%s, %s),4326)), %s))))"
 	additional_values = []
 	for radius in radii:
 		query = query + basic_query + " , "
@@ -73,7 +80,7 @@ def query_osm_local_road(lon_query, lat_query, radii):
 
 
 def query_osm_line_distance(lon_query, lat_query, key, value):
-	query = "SELECT min(ST_Distance(geog, geography(ST_SetSRID(ST_MakePoint(%s,%s),4326)))) FROM planet_osm_line WHERE {} = %s;".format(
+	query = "SELECT min(ST_Distance(geo, geography(ST_SetSRID(ST_MakePoint(%s,%s),4326)))) FROM planet_osm_line WHERE {} = %s;".format(
 		key)
 
 	cur.execute(query, (lon_query, lat_query, value))
@@ -81,7 +88,7 @@ def query_osm_line_distance(lon_query, lat_query, key, value):
 
 
 def query_osm_point_distance(lon_query, lat_query, key, value):
-	query = "SELECT min(ST_Distance(geog, geography(ST_SetSRID(ST_MakePoint(%s,%s),4326)))) FROM planet_osm_point WHERE {} = %s;".format(
+	query = "SELECT min(ST_Distance(geo, geography(ST_SetSRID(ST_MakePoint(%s,%s),4326)))) FROM planet_osm_point WHERE {} = %s;".format(
 		key)
 
 	cur.execute(query, (lon_query, lat_query, value))
@@ -89,7 +96,7 @@ def query_osm_point_distance(lon_query, lat_query, key, value):
 
 
 def query_osm_polygon_distance(lon_query, lat_query, key, value):
-	query = "SELECT min(ST_Distance(geog, geography(ST_SetSRID(ST_MakePoint(%s,%s),4326)))) FROM planet_osm_polygon WHERE {} = %s;".format(
+	query = "SELECT min(ST_Distance(geo, geography(ST_SetSRID(ST_MakePoint(%s,%s),4326)))) FROM planet_osm_polygon WHERE {} = %s;".format(
 		key)
 
 	cur.execute(query, (lon_query, lat_query, value))
@@ -105,6 +112,7 @@ def create_features(lon, lat):
 
 		features.extend(query_osm_highway(lon, lat, list(range(50, 1550, 50))))
 		features.extend(query_osm_local_road(lon, lat, list(range(50, 1550, 50))))
+
 	except Exception as e:
 		print(e)
 		print("error")
@@ -137,26 +145,26 @@ def create_features_withDist(lon, lat):
 	return features
 
 
-def create_features_from_SwissCoord(x, y):
-	lat = CHtoWGSlat(x, y)
-	lon = CHtoWGSlng(x, y)
+def create_features_from_localCoord(x, y):
+	lon, lat = meterToCoord(x + 50, y + 50)
 	return create_features(lon, lat)
 
 
 def preproc_landuse_features(data):
+	data_new = []
+
 	if args.distance:
 		func = create_features_withDist
 	else:
 		func = create_features
 
-	data_new = []
 	for row in data:
 		x = row[0]
 		y = row[1]
-		m = row[2]
+		lon = row[2]
+		lat = row[3]
+		m = row[4]
 		row_new = [x, y, m]
-		lat = CHtoWGSlat(x + 50, y + 50)
-		lon = CHtoWGSlng(x + 50, y + 50)
 
 		row_new.extend(func(lon, lat))
 
@@ -168,32 +176,23 @@ def preproc_landuse_features(data):
 if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument("-f", "--file", help="Define an input file.")
-	parser.add_argument("-n", "--fileNumber", type=int, help="Input file as number of season.")
 	parser.add_argument("-d", "--distance", help="Create also distance features.", action='store_true')
 
 	args = parser.parse_args()
 
-	files = ["pm_ha_ext_01042012_30062012.mat", "pm_ha_ext_01072012_31092012.mat", "pm_ha_ext_01102012_31122012.mat",
-	         "pm_ha_ext_01012013_31032013.mat"]
+	data = []
 
-	if args.file:
-		file = args.file
-	elif args.fileNumber:
-		file = files[args.fileNumber]
-	else:
-		# file = "pm_ha_ext_01012013_31032013.mat"
-		file = "pm_ha_ext_01042012_30062012.mat"
-	# file = "pm_ha_ext_01072012_31092012.mat"
-	# file = "pm_ha_ext_01102012_31122012.mat"
+	file = "turin_tiles_200.csv"
 
-	print("Loading file {}.".format(file))
+	with open(paths.apicdir + file, 'r') as myfile:
+		reader = csv.reader(myfile)
+		for row in reader:
+			data.append([float(i) for i in row])
 
-	data = sio.loadmat(paths.extdatadir + file)['pm_ha']
-	print(data.shape)
+	print(len(data))
 	print("Starting feature generation.")
 	start_time = time.time()
-	data_new = preproc_landuse_features(data[:, 0:3])
+	data_new = preproc_landuse_features(data)
 	print("Features generated in {} minutes!".format((time.time() - start_time) / 60))
 
 	filenew = file[:-4]
@@ -203,7 +202,7 @@ if __name__ == "__main__":
 	else:
 		filenew = filenew + "_landUse.csv"
 
-	with open(paths.lurdata + filenew, 'w') as myfile:
+	with open(paths.apicdir + filenew, 'w') as myfile:
 		wr = csv.writer(myfile)
 		print(myfile.name)
 
