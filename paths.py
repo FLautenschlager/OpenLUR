@@ -11,3 +11,5 @@ landusedir = join(rootdir, 'landuse_data', '')
 rdir = join(rootdir, '..', 'R', '')
 lurdata = join(datadir, 'lur', '')
 bayesiandata = join(datadir, 'bayes', '')
+
+apicdir = expanduser(join('~', 'Data', 'APIC', ''))
