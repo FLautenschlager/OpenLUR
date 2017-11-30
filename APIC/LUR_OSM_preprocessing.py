@@ -28,7 +28,7 @@ def preproc_landuse_features(data):
 		m = row[4]
 		row_new = [x, y, m]
 
-		row_new.extend(func(lon, lat))
+		row_new.extend(func(lat, lon))
 
 		data_new.append(row_new)
 

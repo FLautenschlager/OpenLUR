@@ -8,7 +8,6 @@ import numpy as np
 import argparse
 import csv
 import re
-
 import paths
 import LUR_osm.Saver as Saver
 
@@ -57,26 +56,19 @@ def cross_validation(X_t, y_t):
 if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument("-f", "--file", help="Define an input file.")
-	parser.add_argument("-n", "--fileNumber", help="Number of season instead of file", type=int)
+	parser.add_argument("-f", "--file", help="Define an input file. If not, the standard file will be used.")
 	parser.add_argument("-i", "--iterations", help="Number of iterations to mean on", type=int)
 	parser.add_argument("-p", "--preprocessing", help="Use polynomial preprocessing", action='store_true')
 	parser.add_argument("-d", "--distances", help="use distances as features", action='store_true')
 
 	args = parser.parse_args()
 
-	files = ["pm_ha_ext_01042012_30062012_landUse.csv", "pm_ha_ext_01072012_31092012_landUse.csv",
-	         "pm_ha_ext_01102012_31122012_landUse.csv", "pm_ha_ext_01012013_31032013_landUse.csv"]
+	file = "turin_tiles_200_landUse.csv"
 
 	if args.file:
 		file = args.file
-	else:
-		if args.fileNumber:
-			file = files[args.fileNumber]
-		else:
-			file = files[0]
 
-	dataset = re.search("[0-9]{8}_[0-9]{8}", file).group(0)
+	dataset = "APIC Turin"
 
 	feat = "OSM land use"
 	if args.distances:
@@ -91,7 +83,7 @@ if __name__ == "__main__":
 		iterations = 5
 
 	data = []
-	with open(paths.lurdata + file, 'r') as myfile:
+	with open(paths.apicdir + file, 'r') as myfile:
 		reader = csv.reader(myfile)
 		for row in reader:
 			data.append([float(i) for i in row])

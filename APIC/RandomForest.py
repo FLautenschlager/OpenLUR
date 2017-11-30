@@ -1,8 +1,9 @@
 from sklearn.preprocessing import PolynomialFeatures, Imputer, Normalizer
-from sklearn.ensemble import AdaBoostRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.model_selection import KFold
+
 
 import numpy as np
 import argparse
@@ -27,10 +28,10 @@ def cross_validation(X_t, y_t):
 		imputer = Imputer(strategy='mean')
 		scaler = Normalizer()
 		preprocessor = PolynomialFeatures(degree=2, interaction_only=True, include_bias=True)
-		regressor = AdaBoostRegressor(n_estimators=489, learning_rate=1.0696244587757953, loss='exponential', )
+		regressor = RandomForestRegressor(n_estimators=489)
 
 		line = [('Imputer', imputer),
-		        ('Scaler', scaler)]
+			('Scaler', scaler)]
 
 		if args.preprocessing:
 			line.append(('Preprocessor', preprocessor))
@@ -58,25 +59,18 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-f", "--file", help="Define an input file.")
-	parser.add_argument("-n", "--fileNumber", help="Number of season instead of file", type=int)
 	parser.add_argument("-i", "--iterations", help="Number of iterations to mean on", type=int)
 	parser.add_argument("-p", "--preprocessing", help="Use polynomial preprocessing", action='store_true')
 	parser.add_argument("-d", "--distances", help="use distances as features", action='store_true')
 
 	args = parser.parse_args()
 
-	files = ["pm_ha_ext_01042012_30062012_landUse.csv", "pm_ha_ext_01072012_31092012_landUse.csv",
-	         "pm_ha_ext_01102012_31122012_landUse.csv", "pm_ha_ext_01012013_31032013_landUse.csv"]
+	file = "turin_tiles_200_landUse.csv"
 
 	if args.file:
 		file = args.file
-	else:
-		if args.fileNumber:
-			file = files[args.fileNumber]
-		else:
-			file = files[0]
 
-	dataset = re.search("[0-9]{8}_[0-9]{8}", file).group(0)
+	dataset = "APIC Turin"
 
 	feat = "OSM land use"
 	if args.distances:
@@ -91,7 +85,7 @@ if __name__ == "__main__":
 		iterations = 5
 
 	data = []
-	with open(paths.lurdata + file, 'r') as myfile:
+	with open(paths.apicdir + file, 'r') as myfile:
 		reader = csv.reader(myfile)
 		for row in reader:
 			data.append([float(i) for i in row])
@@ -107,7 +101,7 @@ if __name__ == "__main__":
 	mae_total = []
 	rmse_total = []
 	for k in range(iterations):
-		print("Iteration {}:".format(k + 1))
+		print("Iteration {}:".format(k+1))
 		r2, mae, rmse = cross_validation(X_train, y_train)
 		r2_total.append(r2)
 		mae_total.append(mae)
@@ -120,4 +114,4 @@ if __name__ == "__main__":
 	print("Final results:")
 	print("R2 = {}\nRMSE = {}\nMAE = {}".format(r2_mean, rmse_mean, mae_mean))
 
-	Saver.saveToDb(dataset, feat, args.preprocessing, "Adaboost", args.iterations, r2_mean, rmse_mean, mae_mean)
+	Saver.saveToDb(dataset, feat, args.preprocessing, "Random Forest", args.iterations, r2_mean, rmse_mean, mae_mean)

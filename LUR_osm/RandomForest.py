@@ -1,6 +1,3 @@
-import sys
-from os.path import expanduser
-
 from sklearn.preprocessing import PolynomialFeatures, Imputer, Normalizer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
@@ -12,11 +9,7 @@ import numpy as np
 import argparse
 import csv
 import re
-homedir = expanduser("~/")
 
-if (homedir + "code-2017-land-use") not in sys.path:
-	print("Adding path to sys.path: " + homedir + "code-2017-land-use")
-	sys.path.append(homedir + "code-2017-land-use")
 import paths
 import LUR_osm.Saver as Saver
 
