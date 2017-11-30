@@ -14,8 +14,8 @@ def saveToDb(dataset, feat, preproc, regressor, iterations, r2, rmse, mae):
 	cur = db.cursor()
 
 	add_row = ("INSERT INTO lur_osm"
-	           "(timestamp, data, features, preprocessing, regressor, cv_iterations, r_squared, rmse, mae)"
-	           "VALUES (%S, %S, %S, %S, %S, %S, %S, %S, %S)")
+	           " (timestamp, data, features, preprocessing, regressor, cv_iterations, r_squared, rmse, mae)"
+	           " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)")
 
 	values = []
 	values.append(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -32,5 +32,9 @@ def saveToDb(dataset, feat, preproc, regressor, iterations, r2, rmse, mae):
 	values.append(mae)
 
 	cur.execute(add_row, values)
-
+	db.commit()
+	cur.execute("SELECT COUNT(*) FROM lur_osm")
+	print(cur.fetchone())
+	cur.close()
+	db.close()
 	print(values)
