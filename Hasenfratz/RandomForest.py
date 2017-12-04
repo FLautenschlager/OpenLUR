@@ -120,4 +120,4 @@ if __name__ == "__main__":
 	print("Final results:")
 	print("R2 = {}\nRMSE = {}\nMAE = {}".format(r2_mean, rmse_mean, mae_mean))
 
-	Saver.saveToDb(dataset, feat, args.preprocessing, "Adaboost", args.iterations, r2_mean, rmse_mean, mae_mean)
+	Saver.saveToDb(dataset, feat, args.preprocessing, "Random Forest", args.iterations, r2_mean, rmse_mean, mae_mean)
