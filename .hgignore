@@ -11,4 +11,5 @@ LUR_osm/virtActivate
 *.json
 *.pyc
 *.png
+*.csv
 ^paths.py$

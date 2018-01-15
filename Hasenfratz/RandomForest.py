@@ -1,5 +1,5 @@
 import sys
-from os.path import expanduser
+from os.path import expanduser, join
 
 from sklearn.preprocessing import PolynomialFeatures, Imputer, Normalizer
 from sklearn.ensemble import RandomForestRegressor
@@ -11,6 +11,7 @@ import numpy as np
 import argparse
 import scipy.io as sio
 import re
+import pandas as pd
 
 homedir = expanduser("~/")
 if (homedir + "code-2017-land-use") not in sys.path:
@@ -27,6 +28,7 @@ def cross_validation(X_t, y_t):
 	rmse = []
 	mae = []
 
+	fold = 1
 	for train, test in kf.split(X_t):
 		X_train, y_train = X_t[train, :], y_t[train]
 		X_test, y_test = X_t[test, :], y_t[test]
@@ -53,12 +55,22 @@ def cross_validation(X_t, y_t):
 		mae.append(mean_absolute_error(y_test, pred))
 		rmse.append(mean_squared_error(y_test, pred))
 
+		d = [y_test, pred]
+		df_fold = pd.DataFrame(data=list(map(list, zip(*d))), columns=['y_test', 'pred'])
+		df_fold['fold'] = fold
+
+		if fold==1:
+			df = df_fold
+		else:
+			df = df.append(df_fold, ignore_index=True)
+		fold += 1
+
 	scoreMean = np.mean(score)
 	# print("R2-score on training folds = " + score_train)
 	# print("R2-score on test folds = " + score)
 	print("Mean R2-score on training data = {}".format(np.mean(score_train)))
 	print("Mean R2-score on test data = {}".format(np.mean(scoreMean)))
-	return scoreMean, np.mean(mae), np.sqrt(np.mean(rmse))
+	return scoreMean, np.mean(mae), np.sqrt(np.mean(rmse)), df
 
 
 if __name__ == "__main__":
@@ -84,7 +96,7 @@ if __name__ == "__main__":
 
 	dataset = re.search("[0-9]{8}_[0-9]{8}", file).group(0)
 
-	feat = "Hasenfratz full"
+	feat = "Hasenfratz_full"
 
 	print(file)
 
@@ -108,11 +120,16 @@ if __name__ == "__main__":
 	rmse_total = []
 	for k in range(iterations):
 		print("Iteration {}:".format(k + 1))
-		r2, mae, rmse = cross_validation(X_train, y_train)
+		r2, mae, rmse, df_iter = cross_validation(X_train, y_train)
 		r2_total.append(r2)
 		mae_total.append(mae)
 		rmse_total.append(rmse)
 		print("")
+		df_iter["iter"] = k
+		if k==0:
+			df = df_iter
+		else:
+			df = df.append(df_iter, ignore_index=True)
 
 	r2_mean = np.mean(r2_total)
 	mae_mean = np.mean(mae_total)
@@ -120,4 +137,5 @@ if __name__ == "__main__":
 	print("Final results:")
 	print("R2 = {}\nRMSE = {}\nMAE = {}".format(r2_mean, rmse_mean, mae_mean))
 
-	Saver.saveToDb(dataset, feat, args.preprocessing, "Random Forest", args.iterations, r2_mean, rmse_mean, mae_mean)
+	df.to_csv(join("~", "Data", "OpenSense", dataset + "_" + feat + "_RandomForest.csv"), index=False)
+#	Saver.saveToDb(dataset, feat, args.preprocessing, "Random Forest", args.iterations, r2_mean, rmse_mean, mae_mean)

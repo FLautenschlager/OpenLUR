@@ -11,6 +11,8 @@ import re
 
 import paths
 import LUR_osm.Saver as Saver
+import pandas as pd
+from os.path import join
 
 
 def cross_validation(X_t, y_t):
@@ -20,6 +22,7 @@ def cross_validation(X_t, y_t):
 	rmse = []
 	mae = []
 
+	fold = 1
 	for train, test in kf.split(X_t):
 		X_train, y_train = X_t[train, :], y_t[train]
 		X_test, y_test = X_t[test, :], y_t[test]
@@ -46,12 +49,22 @@ def cross_validation(X_t, y_t):
 		mae.append(mean_absolute_error(y_test, pred))
 		rmse.append(mean_squared_error(y_test, pred))
 
+		d = [y_test, pred]
+		df_fold = pd.DataFrame(data=list(map(list, zip(*d))), columns=['y_test', 'pred'])
+		df_fold['fold'] = fold
+
+		if fold==1:
+			df = df_fold
+		else:
+			df = df.append(df_fold, ignore_index=True)
+		fold += 1
+
 	scoreMean = np.mean(score)
 	# print("R2-score on training folds = " + score_train)
 	# print("R2-score on test folds = " + score)
 	print("Mean R2-score on training data = {}".format(np.mean(score_train)))
 	print("Mean R2-score on test data = {}".format(np.mean(scoreMean)))
-	return scoreMean, np.mean(mae), np.sqrt(np.mean(rmse))
+	return scoreMean, np.mean(mae), np.sqrt(np.mean(rmse)), df
 
 
 if __name__ == "__main__":
@@ -78,7 +91,7 @@ if __name__ == "__main__":
 
 	dataset = re.search("[0-9]{8}_[0-9]{8}", file).group(0)
 
-	feat = "OSM land use"
+	feat = "OSM_land_use"
 	if args.distances:
 		file = file[:-4] + "_withDistances.csv"
 		feat = feat + " + distances"
@@ -108,11 +121,16 @@ if __name__ == "__main__":
 	rmse_total = []
 	for k in range(iterations):
 		print("Iteration {}:".format(k + 1))
-		r2, mae, rmse = cross_validation(X_train, y_train)
+		r2, mae, rmse, df_iter = cross_validation(X_train, y_train)
 		r2_total.append(r2)
 		mae_total.append(mae)
 		rmse_total.append(rmse)
 		print("")
+		df_iter["iter"] = k
+		if k==0:
+			df = df_iter
+		else:
+			df = df.append(df_iter, ignore_index=True)
 
 	r2_mean = np.mean(r2_total)
 	mae_mean = np.mean(mae_total)
@@ -120,4 +138,5 @@ if __name__ == "__main__":
 	print("Final results:")
 	print("R2 = {}\nRMSE = {}\nMAE = {}".format(r2_mean, rmse_mean, mae_mean))
 
-	Saver.saveToDb(dataset, feat, args.preprocessing, "Adaboost", args.iterations, r2_mean, rmse_mean, mae_mean)
+	df.to_csv(join("~", "Data", "OpenSense", dataset + "_" + feat + "_Adaboost.csv"), index=False)
+#	Saver.saveToDb(dataset, feat, args.preprocessing, "Adaboost", args.iterations, r2_mean, rmse_mean, mae_mean)
