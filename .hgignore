@@ -5,6 +5,7 @@ __pycache__
 
 HeatMapBcc/pyIBCC
 HeatMapBcc/HeatMapBCC
+LUR_osm/virtActivate
 
 *.ipynb
 *.json
