@@ -106,7 +106,7 @@ if __name__ == "__main__":
 		iterations = 5
 
 	data = []
-	data = sio.loadmat(paths.extdatadir + 'pm_ha_ext_01042012_30062012.mat')['pm_ha']
+	data = sio.loadmat(paths.extdatadir + file)['pm_ha']
 
 	train_data_np = np.array(data)
 
@@ -138,4 +138,4 @@ if __name__ == "__main__":
 	print("R2 = {}\nRMSE = {}\nMAE = {}".format(r2_mean, rmse_mean, mae_mean))
 
 	df.to_csv(join("~", "Data", "OpenSense", dataset + "_" + feat + "_RandomForest.csv"), index=False)
-#	Saver.saveToDb(dataset, feat, args.preprocessing, "Random Forest", args.iterations, r2_mean, rmse_mean, mae_mean)
+	Saver.saveToDb(dataset, feat, args.preprocessing, "Random Forest", args.iterations, r2_mean, rmse_mean, mae_mean)

@@ -140,4 +140,4 @@ if __name__ == "__main__":
 	print("R2 = {}\nRMSE = {}\nMAE = {}".format(r2_mean, rmse_mean, mae_mean))
 
 	df.to_csv(join("~", "Data", "OpenSense", dataset + "_" + feat + "_Adaboost.csv"), index=False)
-	#Saver.saveToDb(dataset, feat, args.preprocessing, "Adaboost", args.iterations, r2_mean, rmse_mean, mae_mean)
+	Saver.saveToDb(dataset, feat, args.preprocessing, "Adaboost", args.iterations, r2_mean, rmse_mean, mae_mean)
