@@ -1,24 +1,67 @@
+"""
+Land-use regression with GAM. Does a single ten-fold cross-validation but the
+folds are calculated in parallel.
+"""
+
+import sys
+from os.path import isfile, join, basename, abspath, dirname
+# This is necessary so that it is possible to import files from the parent dir
+sys.path.insert(0, abspath(join(dirname(__file__), '..')))
+
+import ast
+import re
+import argparse
+from multiprocessing import Pool, cpu_count
+
 import scipy.io as sio
-import os
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 import paths
-from multiprocessing import Pool, cpu_count
-import argparse
-import pickle
 
 import rpy2.robjects as robjects
 from rpy2.robjects import FloatVector, pandas2ri
 from rpy2.robjects.packages import importr
 from rpy2.rinterface import RRuntimeError
 
+# Default values for program arguments
+INPUT_FILE_PATH = join(
+    paths.extdatadir, 'pm_01072012_31092012_filtered_ha_200.csv')
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
-RESULTS_FILE_NAME = 'tiles_features_batchcv_hasenfratz.csv'
+RESULTS_FILE_NAME = 'gam_output.csv'
+
+
+def load_input_file(input_file_path):
+    """ Load .csv or .mat input file """
+
+    file_extension = input_file_path[-4:]
+
+    if file_extension == '.mat':
+        # Load data
+        pm_ha = sio.loadmat(input_file_path)['pm_ha']
+
+        # Prepare data
+        data_1 = pd.DataFrame(pm_ha[:, :3])
+        data_2 = pd.DataFrame(pm_ha[:, 7:])
+        calib_data = pd.concat([data_1, data_2], axis=1)
+        calib_data.columns = ['x', 'y', 'pm_measurement', 'population', 'industry', 'floorlevel', 'heating', 'elevation', 'streetsize',
+                              'signaldist', 'streetdist', 'slope', 'expo', 'traffic', 'streetdist_m', 'streetdist_l', 'trafficdist_l', 'trafficdist_h', 'traffic_tot']
+
+        return calib_data
+
+    elif file_extension == '.csv':
+        # Load data
+        return pd.read_csv(input_file_path)
+
+    else:
+        print('Invalid file extension: ', file_extension)
+
 
 def build_formula_string(feature_cols):
+    """ Build formula for GAM depending on which features are used """
+
     smooth_template = 's({feature_col},bs="cr",k=3)'
     formula = 'pm_measurement~'
 
@@ -34,6 +77,8 @@ def build_formula_string(feature_cols):
 
 
 def calculate_gam(inputs):
+    """ Calculate the results of a GAM """
+
     train_calib_data, test_calib_data, test_model_var, feature_cols = inputs
 
     # mgcv is the R package with the GAM implementation
@@ -70,7 +115,7 @@ def calculate_gam(inputs):
     # predictions
     test_measure_predict = test_calib_data.merge(
         test_model_var_predictions[['x', 'y', 'prediction']], how='inner', on=['x', 'y']
-        )#[['x', 'y', 'pm_measurement', 'prediction']]
+    )  # [['x', 'y', 'pm_measurement', 'prediction']]
     # Check how large the error is with the remaining 10% of data
     error_model = test_measure_predict['pm_measurement'] - \
         test_measure_predict['prediction']
@@ -100,12 +145,15 @@ def calculate_gam(inputs):
     # Calculate adjusted R²: rsq-(1-rsq)*p/(n-p-1)
     p = len(feature_cols)
     n = len(train_calib_data) + len(test_calib_data)
-    adj_rsqval = rsqval-(1-rsqval)*p/(n-p-1)
+    adj_rsqval = rsqval - (1 - rsqval) * p / (n - p - 1)
 
     # Return metrics and predicted values
     return rmse, mae, rsq, rsqval, adj_rsqval, devexpl, fac2, test_measure_predict
 
-def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repeat=40,):
+
+def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repeat=40):
+    """ Cross-validation of GAM """
+
     # Select test and training dataset for 10 fold cross validation
     kf = KFold(n_splits=10, shuffle=True)
 
@@ -138,8 +186,8 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
             test_model_var = model_var[~ind_model_var.isin(ind_train_calib)]
 
             # First gather all the inputs for each GAM calculation in a list
-            gam_inputs.append((train_calib_data, test_calib_data, test_model_var, feature_cols))
-
+            gam_inputs.append(
+                (train_calib_data, test_calib_data, test_model_var, feature_cols))
 
     try:
         # Add all the GAM calculations with their respective inputs into the Pool
@@ -162,10 +210,10 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
             'mean-batch-fac2': None,
             'predictions': None}
 
-
     pool.close()
 
-    results.columns = ['rmse', 'mae', 'rsq', 'rsqval', 'adj-rsqval', 'devexpl', 'fac2', 'predictions']
+    results.columns = ['rmse', 'mae', 'rsq', 'rsqval',
+                       'adj-rsqval', 'devexpl', 'fac2', 'predictions']
 
     # Calculate Root-mean-square error model
     rmse_model.append(results['rmse'])
@@ -185,23 +233,23 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
     predictions = predictions.set_index(['x', 'y'])
     print(predictions)
 
-    pickle.dump(predictions, open('hasenfratz_results.p', 'wb'))
-
-    skl_rmse = np.sqrt(mean_squared_error(predictions['pm_measurement'], predictions['prediction']))
-    skl_mae = mean_absolute_error(predictions['pm_measurement'], predictions['prediction'])
-    skl_rsq_val = r2_score(predictions['pm_measurement'], predictions['prediction'])
+    skl_rmse = np.sqrt(mean_squared_error(
+        predictions['pm_measurement'], predictions['prediction']))
+    skl_mae = mean_absolute_error(
+        predictions['pm_measurement'], predictions['prediction'])
+    skl_rsq_val = r2_score(
+        predictions['pm_measurement'], predictions['prediction'])
 
     # Calculate adjusted R²: rsq-(1-rsq)*p/(n-p-1)
     p = len(feature_cols)
     n = len(calib_data)
-    adj_skl_rsq_val = skl_rsq_val-(1-skl_rsq_val)*p/(n-p-1)
+    adj_skl_rsq_val = skl_rsq_val - (1 - skl_rsq_val) * p / (n - p - 1)
 
     # Calculate Factor of 2 metric
     fac2_ind = predictions['pm_measurement'] / \
         predictions['prediction']
     fac2_ind = fac2_ind[(fac2_ind <= 2) & (fac2_ind >= 0.5)].dropna()
     fac2 = (len(fac2_ind) / len(predictions['pm_measurement']) * 100)
-
 
     print('Root-mean-square error:', np.mean(rmse_model), 'particles/cm^3')
     print('Mean-absolute error:', np.mean(mae_model))
@@ -231,128 +279,66 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-j', '--jobs', default=cpu_count(), type=int, help='Specifies the number of jobs to run simultaneously.')
-    parser.add_argument('-c', '--cross', action='store_true',
-                        help='Train and evaluate with 10-fold cross validation.')
-    parser.add_argument('-b', '--batch_cross', action='store_true',
-                        help='Train and evaluate batches with 10-fold cross validation.')
+    parser.add_argument('input_file_path', help='File with calibration data',
+                        nargs='?', default=INPUT_FILE_PATH)
+    parser.add_argument('results_file', default=RESULTS_FILE_NAME, nargs='?',
+                        help='File where to output the results')
+    parser.add_argument('-f', '--feature_cols', default=FEATURE_COLS,
+                        help='Feature columns to use for input')
+    parser.add_argument('-j', '--jobs', default=cpu_count(), type=int,
+                        help='Specifies the number of simultaneous jobs')
     args = parser.parse_args()
 
-    if args.cross is True:
-        # Load data
-        pm_ha = sio.loadmat(paths.extdatadir +
-                            'pm_ha_ext_01102012_31122012.mat')['pm_ha']#'pm_ha_ext_01042012_30062012.mat')['pm_ha']
+    # Convert feature cols string to list
+    if not isinstance(args.feature_cols, list):
+        args.feature_cols = ast.literal_eval(args.feature_cols)
 
-        # Prepare data
-        data_1 = pd.DataFrame(pm_ha[:, :3])
-        data_2 = pd.DataFrame(pm_ha[:, 7:])
-        calib_data = pd.concat([data_1, data_2], axis=1)
-        calib_data.columns = ['x', 'y', 'pm_measurement', 'population', 'industry', 'floorlevel', 'heating', 'elevation', 'streetsize',
-                              'signaldist', 'streetdist', 'slope', 'expo', 'traffic', 'streetdist_m', 'streetdist_l', 'trafficdist_l', 'trafficdist_h', 'traffic_tot']
+    if not isinstance(args.feature_cols, list):
+        print('feature_cols is not a valid list')
 
-        model_var = pd.DataFrame(sio.loadmat(
-            paths.rdir + 'model_ha_variables.mat')['model_variables'])
-        model_var.columns = ['x', 'y', 'population', 'industry', 'floorlevel', 'heating', 'elevation', 'streetsize', 'signaldist',
-                             'streetdist', 'slope', 'expo', 'traffic', 'streetdist_m', 'streetdist_l', 'trafficdist_l', 'trafficdist_h', 'traffic_tot']
+    # Load data
+    calib_data = load_input_file(args.input_file_path)
 
-        cross_validate(calib_data, model_var, args.jobs)
+    model_var = pd.DataFrame(sio.loadmat(
+        paths.rdir + 'model_ha_variables.mat')['model_variables'])
+    model_var.columns = ['x', 'y', 'population', 'industry', 'floorlevel', 'heating', 'elevation', 'streetsize', 'signaldist',
+                         'streetdist', 'slope', 'expo', 'traffic', 'streetdist_m', 'streetdist_l', 'trafficdist_l', 'trafficdist_h', 'traffic_tot']
 
-    if args.batch_cross is True:
-        calib_files = [
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_1200.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_1100.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_1000.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_900.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_800.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_700.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_600.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_500.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_400.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_300.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_250.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_200.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_170.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_140.csv',
-            paths.extdatadir + 'pm_01072012_31092012_filtered_ha_110.csv'#,
-            # paths.extdatadir + 'pm_01072012_31092012_filtered_ha_80.csv',
-            # paths.extdatadir + 'pm_01072012_31092012_filtered_ha_50.csv',
-            # paths.extdatadir + 'pm_01072012_31092012_filtered_ha_20.csv'
-        ]
-        feature_cols_list = [
-            # ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
-            #     'streetsize', 'traffic_tot', 'streetdist_l'],
-            # ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
-            #     'streetsize', 'traffic_tot', 'streetdist_l', 'population'],
-            # ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
-            #     'streetsize', 'traffic_tot', 'streetdist_l', 'population',
-            #     'heating'],
-            # ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
-            #     'streetsize', 'traffic_tot', 'streetdist_l', 'population',
-            #     'heating', 'signaldist'],
-            # ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
-            #     'streetsize', 'traffic_tot', 'streetdist_l', 'population',
-            #     'heating', 'signaldist', 'streetdist'],
-            # ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
-            #     'streetsize', 'traffic_tot', 'streetdist_l', 'population',
-            #     'heating', 'signaldist', 'streetdist', 'traffic'],
-            # ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
-            #     'streetsize', 'traffic_tot', 'streetdist_l', 'population',
-            #     'heating', 'signaldist', 'streetdist', 'traffic',
-            #     'streetdist_m'],
-            ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
-                'streetsize', 'traffic_tot', 'streetdist_l', 'population',
-                'heating', 'signaldist', 'streetdist', 'traffic',
-                'streetdist_m', 'trafficdist_l'],
-            ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
-                'streetsize', 'traffic_tot', 'streetdist_l', 'population',
-                'heating', 'signaldist', 'streetdist', 'traffic',
-                'streetdist_m', 'trafficdist_l', 'trafficdist_h']
-        ]
+    # Parse timeframe from file name
+    tf_pattern = re.compile('\d{8}_\d{8}')
+    timeframe = tf_pattern.search(basename(args.input_file_path)).group(0)
 
-        for feature_cols in feature_cols_list:
-            for calib_file in calib_files:
-                # Load new data set from file
-                calib_data = pd.read_csv(calib_file)
+    run_info = {
+        'source': 'Hasenfratz',
+        'feature_cols': args.feature_cols,
+        'tiles': len(calib_data),
+        'timeframe': timeframe
+    }
 
-                # Load model_var
-                model_var = pd.DataFrame(sio.loadmat(
-                    paths.rdir + 'model_ha_variables.mat')['model_variables'])
-                model_var.columns = ['x', 'y', 'population', 'industry', 'floorlevel', 'heating', 'elevation', 'streetsize', 'signaldist',
-                                     'streetdist', 'slope', 'expo', 'traffic', 'streetdist_m', 'streetdist_l', 'trafficdist_l', 'trafficdist_h', 'traffic_tot']
+    print('Next Run:', run_info)
 
-                run_info = {
-                    'source': 'Hasenfratz',
-                    'feature_cols': feature_cols,
-                    'tiles': len(calib_data),
-                    'timeframe': '01072012_31092012'
-                }
+    # Do 10-fold cross validation on new data set
+    results = cross_validate(
+        calib_data, model_var, args.jobs, feature_cols=args.feature_cols, repeat=1)
 
-                print('Next CV:', run_info)
+    # Merge run information with results
+    results = {**run_info, **results}
 
-                # Do 10-fold cross validation on new data set
-                results = cross_validate(calib_data, model_var, args.jobs, feature_cols=feature_cols, repeat=1)
+    # Remove predictions since i can't have a table within a table when
+    # outputting to csv
+    del results['predictions']
 
-                # Merge run information with results
-                results = {**run_info, **results}
-                # Calculate adjusted R²: rsq-(1-rsq)*p/(n-p-1)
-                # rsq = results['rsq-val']
-                # p = len(feature_cols)
-                # n = results['tiles']
-                # results['ajd-rsq-val'] = rsq-(1-rsq)*p/(n-p-1)
-                # Remove predictions since i can't have a table in a table when
-                # outputting to csv
-                del results['predictions']
+    # The initial write has to write the column headers if the file doesn't
+    # exist yet
+    initial_write = not isfile(RESULTS_FILE_NAME)
 
-                # The initial write has to write the column headers if the file doesn't
-                # exist yet
-                initial_write = not os.path.isfile(RESULTS_FILE_NAME)
+    # Write result to file and retry indefinitely if it failed
+    while True:
+        try:
+            pd.DataFrame([results]).to_csv(
+                RESULTS_FILE_NAME, mode='a', header=initial_write, index=False)
+        except:
+            continue
+        break
 
-                # Write result to file and retry indefinitely if it failed
-                while True:
-                    try:
-                        pd.DataFrame([results]).to_csv(RESULTS_FILE_NAME, mode='a', header=initial_write, index=False)
-                    except:
-                        continue
-                    break
-
-                initial_write = False
+    initial_write = False
