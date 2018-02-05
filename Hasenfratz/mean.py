@@ -45,20 +45,12 @@ def cross_validation(X_t, y_t):
         X_train, y_train = X_t[train, :], y_t[train]
         X_test, y_test = X_t[test, :], y_t[test]
 
-        im = Imputer(strategy='most_frequent')
-        mm = MinMaxScaler()
-        p = PolynomialFeatures(
-            degree=3, interaction_only=False, include_bias=True)
-
         r = DummyRegressor(strategy='mean', constant=None, quantile=None)
 
-        pipe = Pipeline([('Imputer', im), ('Scaler', mm),
-                         ('Polynomial', p), ('Regressor', r)])
+        r.fit(X_train, y_train)
 
-        pipe.fit(X_train, y_train)
-
-        pred = pipe.predict(X_test)
-        pred_train = pipe.predict(X_train)
+        pred = r.predict(X_test)
+        pred_train = r.predict(X_train)
 
         rsq_train.append(r2_score(y_train, pred_train))
         rsq.append(r2_score(y_test, pred))
