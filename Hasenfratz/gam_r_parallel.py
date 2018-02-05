@@ -18,12 +18,14 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
-import paths
 
 import rpy2.robjects as robjects
 from rpy2.robjects import FloatVector, pandas2ri
 from rpy2.robjects.packages import importr
 from rpy2.rinterface import RRuntimeError
+
+import paths
+from utils import load_input_file
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(
@@ -31,32 +33,6 @@ INPUT_FILE_PATH = join(
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
 RESULTS_FILE_NAME = 'gam_output.csv'
-
-
-def load_input_file(input_file_path):
-    """ Load .csv or .mat input file """
-
-    file_extension = input_file_path[-4:]
-
-    if file_extension == '.mat':
-        # Load data
-        pm_ha = sio.loadmat(input_file_path)['pm_ha']
-
-        # Prepare data
-        data_1 = pd.DataFrame(pm_ha[:, :3])
-        data_2 = pd.DataFrame(pm_ha[:, 7:])
-        calib_data = pd.concat([data_1, data_2], axis=1)
-        calib_data.columns = ['x', 'y', 'pm_measurement', 'population', 'industry', 'floorlevel', 'heating', 'elevation', 'streetsize',
-                              'signaldist', 'streetdist', 'slope', 'expo', 'traffic', 'streetdist_m', 'streetdist_l', 'trafficdist_l', 'trafficdist_h', 'traffic_tot']
-
-        return calib_data
-
-    elif file_extension == '.csv':
-        # Load data
-        return pd.read_csv(input_file_path)
-
-    else:
-        print('Invalid file extension: ', file_extension)
 
 
 def build_formula_string(feature_cols):
@@ -197,17 +173,18 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
         pool.close()
         print('R Error')
         return {
-            'mean-batch-rmse': None,
             'rmse': None,
-            'mean-batch_mae': None,
+            'rmse-nomean': None,
             'mae': None,
-            'mean-batch-rsq': None,
-            'mean-batch-rsq-val': None,
-            'rsq-val': None,
-            'mean-batch-adj-rsq-val': None,
-            'adj-rsq-val': None,
+            'mae-nomean': None,
+            'rsq-train': None,
+            'rsq': None,
+            'rsq-nomean': None,
+            'adj-rsq': None,
+            'adj-rsq-nomean': None,
             'devexpl': None,
-            'mean-batch-fac2': None,
+            'fac2-nomean': None,
+            'fac2': None,
             'predictions': None}
 
     pool.close()
@@ -260,19 +237,24 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
     print('DevExpl:', np.mean(devexpl_model) * 100)
     print('FAC2:', np.mean(fac2_model))
 
+    # Metrics with the ending '-nomean' are calculated by appending all labels
+    # and predictions of each cross-validation fold to a large list and then
+    # calculating the metric based on this large list. The other metrics are
+    # calculated for each cross-validation fold and after the cross-validation
+    # is done, the mean of these metrics are calculated.
     return {
-        'mean-batch-rmse': np.mean(rmse_model),
-        'rmse': skl_rmse,
-        'mean-batch-mae': np.mean(mae_model),
-        'mae': skl_mae,
-        'mean-batch-rsq': np.mean(rsq_model),
-        'mean-batch-rsq-val': np.mean(rsqval_model),
-        'rsq-val': skl_rsq_val,
-        'mean-batch-adj-rsq-val': np.mean(adj_rsqval_model),
-        'adj-rsq-val': adj_skl_rsq_val,
+        'rmse': np.mean(rmse_model),
+        'rmse-nomean': skl_rmse,
+        'mae': np.mean(mae_model),
+        'mae-nomean': skl_mae,
+        'rsq-train': np.mean(rsq_model),
+        'rsq': np.mean(rsqval_model),
+        'rsq-nomean': skl_rsq_val,
+        'adj-rsq': np.mean(adj_rsqval_model),
+        'adj-rsq-nomean': adj_skl_rsq_val,
         'devexpl': np.mean(devexpl_model) * 100,
-        'fac2': fac2,
-        'mean-batch-fac2': np.mean(fac2_model),
+        'fac2-nomean': fac2,
+        'fac2': np.mean(fac2_model),
         'predictions': predictions}
 
 
@@ -330,13 +312,13 @@ if __name__ == '__main__':
 
     # The initial write has to write the column headers if the file doesn't
     # exist yet
-    initial_write = not isfile(RESULTS_FILE_NAME)
+    initial_write = not isfile(args.results_file)
 
     # Write result to file and retry indefinitely if it failed
     while True:
         try:
             pd.DataFrame([results]).to_csv(
-                RESULTS_FILE_NAME, mode='a', header=initial_write, index=False)
+                args.results_file, mode='a', header=initial_write, index=False)
         except:
             continue
         break
