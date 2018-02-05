@@ -1,5 +1,5 @@
 """
-Land-use regression with Lasso.
+Land-use regression with mean. This is meant to be used as a baseline.
 """
 
 import sys
@@ -11,7 +11,7 @@ import argparse
 import ast
 import re
 
-from sklearn.linear_model import Lasso
+from sklearn.dummy import DummyRegressor
 from sklearn.preprocessing import PolynomialFeatures, Imputer, MinMaxScaler
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
@@ -29,7 +29,7 @@ INPUT_FILE_PATH = join(
     paths.extdatadir, 'pm_01072012_31092012_filtered_ha_200.csv')
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
-RESULTS_FILE_NAME = 'lasso_output.csv'
+RESULTS_FILE_NAME = 'mean_output.csv'
 
 
 def cross_validation(X_t, y_t):
@@ -50,10 +50,7 @@ def cross_validation(X_t, y_t):
         p = PolynomialFeatures(
             degree=3, interaction_only=False, include_bias=True)
 
-        r = Lasso(alpha=1.0, fit_intercept=True, normalize=False,
-                  precompute=False, copy_X=True, max_iter=1000, tol=0.0001,
-                  warm_start=False, positive=False, random_state=None,
-                  selection='cyclic')
+        r = DummyRegressor(strategy='mean', constant=None, quantile=None)
 
         pipe = Pipeline([('Imputer', im), ('Scaler', mm),
                          ('Polynomial', p), ('Regressor', r)])
@@ -114,7 +111,7 @@ if __name__ == "__main__":
     timeframe = tf_pattern.search(basename(args.input_file_path)).group(0)
 
     run_info = {
-        'source': 'lasso',
+        'source': 'mean',
         'feature_cols': args.feature_cols,
         'tiles': len(data),
         'timeframe': timeframe
