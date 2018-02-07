@@ -22,7 +22,7 @@ import pandas as pd
 import scipy.io as sio
 
 import paths
-from utils import load_input_file
+from utils import load_input_file, write_results_file
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(
@@ -128,17 +128,5 @@ if __name__ == "__main__":
     # Merge run information with results
     results = {**run_info, **results}
 
-    # The initial write has to write the column headers if the file doesn't
-    # exist yet
-    initial_write = not isfile(args.results_file)
-
-    # Write result to file and retry indefinitely if it failed
-    while True:
-        try:
-            pd.DataFrame([results]).to_csv(
-                args.results_file, mode='a', header=initial_write, index=False)
-        except:
-            continue
-        break
-
-    initial_write = False
+    # Write results to file
+    write_results_file(args.results_file, results)

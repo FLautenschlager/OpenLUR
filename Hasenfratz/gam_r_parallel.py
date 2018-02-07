@@ -25,7 +25,7 @@ from rpy2.robjects.packages import importr
 from rpy2.rinterface import RRuntimeError
 
 import paths
-from utils import load_input_file
+from utils import load_input_file, write_results_file
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(
@@ -90,7 +90,7 @@ def calculate_gam(inputs):
     # Create a DataFrame where it is easily possible to compare measurements and
     # predictions
     test_measure_predict = test_calib_data.merge(
-        test_model_var_predictions[['x', 'y', 'prediction']], how='inner', on=['x', 'y']
+        test_model_var_predictions[['y', 'x', 'prediction']], how='inner', on=['y', 'x']
     )  # [['x', 'y', 'pm_measurement', 'prediction']]
     # Check how large the error is with the remaining 10% of data
     error_model = test_measure_predict['pm_measurement'] - \
@@ -154,7 +154,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
             # Select test data from model_var (data NOT used for calibration)
             # Do this by finding all rows in model_var whose x and y coordinates are not
             # in train_calib_data
-            ind_keys = ['x', 'y']
+            ind_keys = ['y', 'x']
             ind_train_calib = train_calib_data.set_index(ind_keys).index
             ind_test_calib = test_calib_data.set_index(ind_keys).index
             ind_model_var = model_var.set_index(ind_keys).index
@@ -207,7 +207,7 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
 
     print(results['predictions'][0])
     predictions = pd.concat(results['predictions'].values.tolist())
-    predictions = predictions.set_index(['x', 'y'])
+    predictions = predictions.set_index(['y', 'x'])
     print(predictions)
 
     skl_rmse = np.sqrt(mean_squared_error(
@@ -283,7 +283,7 @@ if __name__ == '__main__':
 
     model_var = pd.DataFrame(sio.loadmat(
         paths.rdir + 'model_ha_variables.mat')['model_variables'])
-    model_var.columns = ['x', 'y', 'population', 'industry', 'floorlevel', 'heating', 'elevation', 'streetsize', 'signaldist',
+    model_var.columns = ['y', 'x', 'population', 'industry', 'floorlevel', 'heating', 'elevation', 'streetsize', 'signaldist',
                          'streetdist', 'slope', 'expo', 'traffic', 'streetdist_m', 'streetdist_l', 'trafficdist_l', 'trafficdist_h', 'traffic_tot']
 
     # Parse timeframe from file name
@@ -291,7 +291,7 @@ if __name__ == '__main__':
     timeframe = tf_pattern.search(basename(args.input_file_path)).group(0)
 
     run_info = {
-        'source': 'Hasenfratz',
+        'source': 'gam',
         'feature_cols': args.feature_cols,
         'tiles': len(calib_data),
         'timeframe': timeframe
@@ -310,17 +310,5 @@ if __name__ == '__main__':
     # outputting to csv
     del results['predictions']
 
-    # The initial write has to write the column headers if the file doesn't
-    # exist yet
-    initial_write = not isfile(args.results_file)
-
-    # Write result to file and retry indefinitely if it failed
-    while True:
-        try:
-            pd.DataFrame([results]).to_csv(
-                args.results_file, mode='a', header=initial_write, index=False)
-        except:
-            continue
-        break
-
-    initial_write = False
+    # Write results to file
+    write_results_file(args.results_file, results)
