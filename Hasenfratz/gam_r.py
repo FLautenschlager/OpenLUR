@@ -1,3 +1,10 @@
+"""
+Land-use regression with GAM. Does 40 ten-fold cross-validations but one at a
+time.
+
+Note: This has not really been maintained so better use gam_r_parallel
+"""
+
 import scipy.io as sio
 import numpy as np
 import pandas as pd
@@ -95,8 +102,10 @@ for _ in range(40):
         rsq_model.append(su.rx2('r.sq'))
         devexpl_model.append(su.rx2('dev.expl'))
         # Calculate Factor of 2
-        fac2_ind = test_measure_predict['pm_measurement'] / \
-            test_measure_predict['prediction']
+        # fac2_ind = test_measure_predict['pm_measurement'] / \
+        #     test_measure_predict['prediction']
+        fac2_ind = test_measure_predict['prediction'] / \
+            test_measure_predict['pm_measurement']
         fac2_ind = fac2_ind[(fac2_ind <= 2) & (fac2_ind >= 0.5)].dropna()
         fac2_model.append(len(fac2_ind) / len(test_measure_predict['pm_measurement']) * 100)
 
