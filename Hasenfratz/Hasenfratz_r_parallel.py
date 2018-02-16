@@ -39,6 +39,7 @@ def calculate_gam(inputs):
     su = base.summary(model)
 
     # Predict the test data
+    test_model_var = test_calib_data.drop(['pm_measurement'], axis=1)
     pred_data = stats.predict(model, newdata=test_model_var, type='response')
     test_model_var_predictions = test_model_var.assign(prediction=pred_data)
 
