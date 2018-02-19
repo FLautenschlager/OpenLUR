@@ -95,10 +95,10 @@ if __name__ == '__main__':
 		#except RRuntimeError:
 		#	print("Too many features for data")
 	elif args.model==2:
-		model = AutoRegressor(njobs=njobs, features=feat, niter=iterations, verbosity=2, time=args.time)
+		model = AutoRegressor(njobs=njobs, features=feat + "_s{}".format(args.seasonNumber), niter=iterations, verbosity=2, time=args.time)
 		model.test_model(data, feat_columns, target)
 	elif args.model==3:
-		model = AutoSKLearn(njobs=njobs, features=feat, time=args.time)
+		model = AutoSKLearn(njobs=njobs, features=feat + "_s{}".format(args.seasonNumber), time=args.time)
 		result = model.test_model(data, feat_columns, target)
 		pickle.dump(result, open(paths.autosklearn + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
 
