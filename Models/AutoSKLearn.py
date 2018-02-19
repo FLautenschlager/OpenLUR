@@ -10,17 +10,27 @@ import sklearn.metrics
 from autosklearn.metrics import r2, mean_squared_error
 from autosklearn.regression import AutoSklearnRegressor
 from autosklearn.constants import *
+from os.path import join, isdir
+from os import mkdir
 
-
+from datetime import datetime
 
 
 class AutoSKLearn:
 
-	def __init__(self, njobs, time=60):
+	def __init__(self, njobs, features, time=60):
 
 		self.njobs = njobs
-		self.tmp_folder = '/tmp/autosklearn_parallel_example_tmp'
-		self.output_folder = '/tmp/autosklearn_parallel_example_out'
+		self.dir = join('tmp', features + datetime.now().strftime("%Y%m%d-%H%M%S"))
+		if ~isdir(self.dir):
+			mkdir(self.dir)
+		self.tmp_folder = join(self.dir, 'tmp')
+		self.output_folder = join(self.dir, 'out')
+		if ~isdir(self.tmp_folder):
+			mkdir(self.tmp_folder)
+		if ~isdir(self.output_folder):
+			mkdir(self.output_folder)
+
 		self.time = time
 
 		for dir in [self.tmp_folder, self.output_folder]:

@@ -97,26 +97,24 @@ if __name__ == '__main__':
 	elif args.model==2:
 		model = AutoRegressor(njobs=njobs, features=feat, niter=iterations, verbosity=2, time=args.time)
 		model.test_model(data, feat_columns, target)
-
-
-
-		#model = AutoSKLearn(njobs=njobs, time=3600*48)
-		#result = model.test_model(data, feat_columns, target)
-		#pickle.dump(result, open(paths.autosklearn + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
+	elif args.model==3:
+		model = AutoSKLearn(njobs=njobs, features=feat, time=args.time)
+		result = model.test_model(data, feat_columns, target)
+		pickle.dump(result, open(paths.autosklearn + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
 
 
 
 	# Feature selection:
-	if args.model==3:
-		print("Install newer R")
+	#if args.model==3:
+		#print("Install newer R")
 		#gam = GAM(njobs=njobs, niter=iterations, verbosity=0)
 
-		final_features = []
+		#final_features = []
 
-		rmse_check = 10000
-		rmse_old = 20000
+		#rmse_check = 10000
+		#rmse_old = 20000
 
-		treshold = 50
+		#treshold = 50
 		#while (rmse_old-rmse_check > treshold):
 
 		#	rmse_features = []
