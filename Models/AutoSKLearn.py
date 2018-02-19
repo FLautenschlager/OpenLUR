@@ -21,7 +21,7 @@ class AutoSKLearn:
 	def __init__(self, njobs, features, time=60):
 
 		self.njobs = njobs
-		self.dir = join('tmp', features + datetime.now().strftime("%Y%m%d-%H%M%S"))
+		self.dir = join('', 'tmp', features + datetime.now().strftime("%Y%m%d-%H%M%S"))
 		if ~isdir(self.dir):
 			mkdir(self.dir)
 		self.tmp_folder = join(self.dir, 'tmp')
