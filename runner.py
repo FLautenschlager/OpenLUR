@@ -4,9 +4,9 @@ import scipy.io as sio
 import csv
 import pickle
 
-from rpy2.rinterface import RRuntimeError
+#from rpy2.rinterface import RRuntimeError
 
-from Models.GAM import GAM
+#from Models.GAM import GAM
 from Models.AutoSKLearn import AutoSKLearn
 import paths
 
@@ -85,11 +85,12 @@ if __name__ == '__main__':
 		njobs = 1
 
 	if args.model==1:
-		gam = GAM(njobs=njobs, niter=iterations, verbosity=1)
-		try:
-			gam.test_model(data, feat_columns, target)
-		except RRuntimeError:
-			print("Too many features for data")
+		print("Install newer R")
+		#gam = GAM(njobs=njobs, niter=iterations, verbosity=1)
+		#try:
+		#	gam.test_model(data, feat_columns, target)
+		#except RRuntimeError:
+		#	print("Too many features for data")
 	elif args.model==2:
 		model = AutoSKLearn(njobs=njobs, time=3600*48)
 		result = model.test_model(data, feat_columns, target)
@@ -99,7 +100,8 @@ if __name__ == '__main__':
 
 	# Feature selection:
 	if args.model==3:
-		gam = GAM(njobs=njobs, niter=iterations, verbosity=0)
+		print("Install newer R")
+		#gam = GAM(njobs=njobs, niter=iterations, verbosity=0)
 
 		final_features = []
 
@@ -107,26 +109,26 @@ if __name__ == '__main__':
 		rmse_old = 20000
 
 		treshold = 50
-		while (rmse_old-rmse_check > treshold):
+		#while (rmse_old-rmse_check > treshold):
 
-			rmse_features = []
-			for feature in feat_columns:
-				features = final_features[:]
-				features.append(feature)
-				print(features)
-				try:
-					rmse, r2, r2val = gam.test_model(data, features, target)
-				except:
-					break
-				rmse_features.append(rmse)
+		#	rmse_features = []
+		#	for feature in feat_columns:
+		#		features = final_features[:]
+		#		features.append(feature)
+		#		print(features)
+		#		try:
+		#			rmse, r2, r2val = gam.test_model(data, features, target)
+		#		except:
+		#			break
+		#		rmse_features.append(rmse)
 
-			print(rmse_features)
-			ind = rmse_features.index(max(rmse_features))
-			final_features.append(feat_columns[ind])
-			feat_columns.pop(ind)
-			rmse_old = rmse_check
-			rmse_check, r2, r2val = gam.test_model(data, features, target)
-			print(rmse_check)
-			print(final_features)
+		#	print(rmse_features)
+		#	ind = rmse_features.index(max(rmse_features))
+		#	final_features.append(feat_columns[ind])
+		#	feat_columns.pop(ind)
+		#	rmse_old = rmse_check
+		#	rmse_check, r2, r2val = gam.test_model(data, features, target)
+		#	print(rmse_check)
+		#	print(final_features)
 
-		pickle.dump({'rmse':rmse_check, 'r2':r2, 'r2val':r2val, 'features':final_features, 'treshold':treshold, "rmse_old":rmse_old}, open(paths.featuresel + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
+		#pickle.dump({'rmse':rmse_check, 'r2':r2, 'r2val':r2val, 'features':final_features, 'treshold':treshold, "rmse_old":rmse_old}, open(paths.featuresel + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
