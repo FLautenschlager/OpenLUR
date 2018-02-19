@@ -82,7 +82,7 @@ class AutoRegressor:
 		y_test = test_data[target]
 
 		automl = AutoSklearnRegressor(time_left_for_this_task=time,
-		                              per_run_time_limit=min([60, int(time / 10)]),
+		                              per_run_time_limit=time-1,
 		                              ensemble_size=50,
 		                              ensemble_nbest=50,
 		                              ml_memory_limit=4096,

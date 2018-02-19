@@ -95,7 +95,7 @@ if __name__ == '__main__':
 		#except RRuntimeError:
 		#	print("Too many features for data")
 	elif args.model==2:
-		model = AutoRegressor(njobs=njobs, features=feat, niter=iterations, verbosity=2)
+		model = AutoRegressor(njobs=njobs, features=feat, niter=iterations, verbosity=2, time=args.time)
 		model.test_model(data, feat_columns, target)
 
 
