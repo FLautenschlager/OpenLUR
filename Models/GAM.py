@@ -8,6 +8,7 @@ import scipy.io as sio
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.packages import importr
 from sklearn.model_selection import KFold
+from sklearn.metrics import r2_score
 
 import paths
 
@@ -148,6 +149,8 @@ class GAM:
 		r2val_env['predictions'] = test_measure_predict['prediction']
 		lt1 = stats.lm(r2val_formula)
 		rsqval = base.summary(lt1).rx2('r.squared')
+
+		rsqval = r2_score(test_measure_predict['pm_measurement'], test_measure_predict['prediction'])
 
 		# Return metrics
 		return rmse, rsq, rsqval, devexpl, fac2

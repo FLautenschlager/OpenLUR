@@ -2,6 +2,7 @@ import argparse
 import pandas as pd
 import scipy.io as sio
 import csv
+from Models.AutoSKLearn_external import AutoRegressor
 import pickle
 
 #from rpy2.rinterface import RRuntimeError
@@ -17,7 +18,8 @@ if __name__ == '__main__':
 	                    help="Dataset to build model on: (1) OpenSense, (2) OSM, (3) OSM + distances", type=int)
 	parser.add_argument("-i", "--iterations", help="Number of iterations to mean on", type=int)
 	parser.add_argument("-p", "--processes", help="Number of parallel processes", type=int)
-	parser.add_argument("-m", "--model", help="Model: (1) GAM, (2) Auto-sklearn", type=int)
+	parser.add_argument("-m", "--model", help="Model: (1) GAM, (2) Auto-sklearn 40*10, (3) Auto-sklearn internal cv", type=int)
+	parser.add_argument("-t", "--time", help="Give total time in seconds", type=int)
 
 	args = parser.parse_args()
 
@@ -56,7 +58,7 @@ if __name__ == '__main__':
 
 		if args.features == 3:
 			file = file[:-4] + "_withDistances.csv"
-			feat = feat + " + distances"
+			feat = feat + "_distances"
 			feat_columns.extend(
 				["distanceTrafficSignal", "distanceMotorway", "distancePrimaryRoad", "distanceIndustrial"])
 
@@ -71,6 +73,7 @@ if __name__ == '__main__':
 		col_total.append(target)
 		col_total.extend(feat_columns)
 		data.columns = col_total
+		print(data.columns)
 
 	dataset = args.seasonNumber
 
@@ -92,9 +95,14 @@ if __name__ == '__main__':
 		#except RRuntimeError:
 		#	print("Too many features for data")
 	elif args.model==2:
-		model = AutoSKLearn(njobs=njobs, time=3600*48)
-		result = model.test_model(data, feat_columns, target)
-		pickle.dump(result, open(paths.autosklearn + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
+		model = AutoRegressor(njobs=njobs, features=feat, niter=iterations, verbosity=2)
+		model.test_model(data, feat_columns, target)
+
+
+
+		#model = AutoSKLearn(njobs=njobs, time=3600*48)
+		#result = model.test_model(data, feat_columns, target)
+		#pickle.dump(result, open(paths.autosklearn + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
 
 
 
