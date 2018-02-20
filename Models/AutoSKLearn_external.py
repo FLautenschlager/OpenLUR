@@ -81,6 +81,7 @@ class AutoRegressor:
 				rmse.append(data['rmse'])
 				r2.append(data['r2'])
 			except:
+				print(f)
 				pass
 
 		# Calculate Root-mean-square error model
