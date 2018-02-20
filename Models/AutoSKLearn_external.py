@@ -103,6 +103,7 @@ class AutoRegressor:
 		rmse = np.sqrt(mean_squared_error(y_test, pred))
 		r2 = r2_score(y_test, pred)
 
+		self.print('Run {}'.format(path[-4:-2]), 2)
 		self.print('Root-mean-square error: {} particles/cm^3'.format(rmse), 2)
 		self.print('R2: {}'.format(r2), 2)
 
