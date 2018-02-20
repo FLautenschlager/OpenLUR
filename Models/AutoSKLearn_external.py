@@ -135,7 +135,7 @@ class AutoRegressor:
 		self.print('Root-mean-square error: {} particles/cm^3'.format(rmse), 2)
 		self.print('R2: {}'.format(r2), 2)
 
-		pickle.dump({'model': automl, 'r2': r2, 'rmse': rmse}, open(path, 'wb'))
+		pickle.dump({'best_model': automl.get_models_with_weights()[0][1].configuration.get_dictionary()['regressor:__choice__'], 'r2': r2, 'rmse': rmse}, open(path, 'wb'))
 
 		return rmse, r2
 
