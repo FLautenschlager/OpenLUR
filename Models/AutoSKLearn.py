@@ -18,7 +18,7 @@ from datetime import datetime
 
 class AutoSKLearn:
 
-	def __init__(self, njobs, features, time=60):
+	def __init__(self, njobs, features, time=60, startNew = False):
 
 		self.njobs = njobs
 		self.dir = join('', 'tmp', features + datetime.now().strftime("%Y%m%d-%H%M%S"))
@@ -33,11 +33,12 @@ class AutoSKLearn:
 
 		self.time = time
 
-		for dir in [self.tmp_folder, self.output_folder]:
-			try:
-				shutil.rmtree(dir)
-			except OSError as e:
-				pass
+		if startNew:
+			for dir in [self.tmp_folder, self.output_folder]:
+				try:
+					shutil.rmtree(dir)
+				except OSError as e:
+					pass
 
 	def test_model(self, data, feat_columns, target):
 

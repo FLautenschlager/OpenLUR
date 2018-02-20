@@ -7,6 +7,8 @@ import pandas as pd
 import paths
 from Models.GAM import GAM
 from Models.GAM_featureSelection import GAM_featureSelection
+from os.path import join, isfile, isdir
+from os import listdir, mkdir
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -33,6 +35,27 @@ if __name__ == '__main__':
 		["distanceTrafficSignal", "distanceMotorway", "distancePrimaryRoad", "distanceIndustrial"])
 
 	target = 'pm_measurement'
+
+	dir = join(paths.featuresel,
+	           "season{}_Features_{}_r2val_{}iterations".format(args.seasonNumber, feat, args.iterations))
+	if ~isdir(dir):
+		mkdir(dir)
+
+	filelist = listdir(dir)
+
+	filenumber = []
+	for f in filelist:
+		if isfile(f):
+			try:
+				filenumber.append(int(f[:-2]))
+			except:
+				pass
+
+	if len(filenumber) == 0:
+		startNumber = 0
+	else:
+		startNumber = max(filenumber) + 1
+
 	data = []
 	with open(paths.lurdata + file, 'r') as myfile:
 		reader = csv.reader(myfile)
@@ -65,18 +88,11 @@ if __name__ == '__main__':
 	i = 0
 	makeIt = True
 
-	while (i < iterations) & makeIt:
-		try:
-			gam = GAM_featureSelection(njobs=njobs, verbosity=0)
-			final_features = gam.select_features(data, feat_columns[:], target)
-			gam = GAM(njobs=njobs, niter=iterations, verbosity=1)
-			rmse, r2, r2val = gam.test_model(data, final_features, target)
-			features_total.append(final_features)
-			rmse_total.append(rmse)
-			r2_total.append(r2)
-			r2val_total.append(r2val)
-		except:
-			makeIt = False
+	for i in range(iterations):
+		gam = GAM_featureSelection(njobs=njobs, verbosity=0)
+		final_features = gam.select_features(data, feat_columns[:], target)
+		gam = GAM(njobs=njobs, niter=iterations, verbosity=1)
+		rmse, r2, r2val = gam.test_model(data, final_features, target)
 
-	pickle.dump({'rmse': rmse_total, 'r2': r2_total, 'r2val': r2val_total, 'features': features_total},
-	            open(paths.featuresel + "season{}_Features_{}_r2val_{}iterations_v2.p".format(args.seasonNumber, feat, iterations), 'wb'))
+		pickle.dump({'rmse': rmse, 'r2': r2, 'r2val': r2val, 'features': final_features},
+		            open(join(dir, "{}.p".format(i)), 'wb'))

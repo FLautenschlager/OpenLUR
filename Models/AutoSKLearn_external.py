@@ -19,7 +19,7 @@ class AutoRegressor:
 		self.njobs = njobs
 		self.niter = niter
 		self.verbosity = verbosity
-		self.groundpath = join(paths.autosklearn, features, datetime.now().strftime("%Y%m%d-%H%M%S"))
+		self.groundpath = join(paths.autosklearn, features, "{}_time{}s".format(datetime.now().strftime("%Y%m%d-%H%M%S"), time))
 		mkdir(self.groundpath)
 		self.print(self.groundpath, 1)
 		self.time = time
