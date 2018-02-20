@@ -114,7 +114,7 @@ class AutoRegressor:
 		y_train = train_data[target]
 		y_test = test_data[target]
 
-		self.print("Doing {}".format(path), 1)
+		# self.print("Doing {}".format(path), 1)
 
 		automl = AutoSklearnRegressor(time_left_for_this_task=time,
 		                              per_run_time_limit=time - 1,
@@ -131,7 +131,7 @@ class AutoRegressor:
 		rmse = np.sqrt(mean_squared_error(y_test, pred))
 		r2 = r2_score(y_test, pred)
 
-		self.print('Run {}'.format(path[-4:-2]), 2)
+		self.print('Run {}'.format(path[-7:-2]), 2)
 		self.print('Root-mean-square error: {} particles/cm^3'.format(rmse), 2)
 		self.print('R2: {}'.format(r2), 2)
 

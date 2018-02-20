@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
 	dir = join(paths.featuresel,
 	           "season{}_Features_{}_r2val_{}iterations".format(args.seasonNumber, feat, args.iterations))
-	if ~isdir(dir):
+	if not isdir(dir):
 		mkdir(dir)
 
 	filelist = listdir(dir)
