@@ -76,10 +76,10 @@ class AutoRegressor:
 		r2 = []
 
 		for f in filelist:
-			data = pickle.load(open(f, "rb"))
-			print(data)
-			try:
 
+			try:
+				data = pickle.load(open(join(self.groundpath, f), "rb"))
+				print(data)
 				rmse.append(data['rmse'])
 				r2.append(data['r2'])
 			except:
