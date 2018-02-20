@@ -1,23 +1,22 @@
+import argparse
+import re
 import sys
 from os.path import expanduser, join
 
-from sklearn.preprocessing import PolynomialFeatures, Imputer, Normalizer
+import numpy as np
+import pandas as pd
+import scipy.io as sio
 from sklearn.ensemble import AdaBoostRegressor
-from sklearn.pipeline import Pipeline
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.model_selection import KFold
-
-import numpy as np
-import argparse
-import scipy.io as sio
-import re
-import pandas as pd
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import PolynomialFeatures, Imputer, Normalizer
 
 homedir = expanduser("~/")
 if (homedir + "code-2017-land-use") not in sys.path:
 	print("Adding path to sys.path: " + homedir + "code-2017-land-use")
 	sys.path.append(homedir + "code-2017-land-use")
-import paths
+from utils import paths
 import LUR_osm.Saver as Saver
 
 

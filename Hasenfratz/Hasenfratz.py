@@ -1,10 +1,9 @@
-import paths
-import scipy.io as sio
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy.io as sio
 
-from clean_data import clean_data
-from calculate_ha_pollution import calculate_ha_pollution
+from utils import paths
+
 
 def feature(feat, row, col):
 	LAT = 0

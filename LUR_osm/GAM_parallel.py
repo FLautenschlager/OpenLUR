@@ -1,23 +1,15 @@
 import csv
-import math
-import pickle
-import pandas as pd
+# from LUR_preprocessing import query_osm_polygone, query_osm_highway
+from multiprocessing import Pool
 
 import numpy as np
-import scipy.io as sio
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score, mean_squared_error
-from sklearn.model_selection import train_test_split, KFold
-
-import paths
-# from LUR_preprocessing import query_osm_polygone, query_osm_highway
-from wgs84_ch1903 import *
-from multiprocessing import Pool, cpu_count
-import argparse
-
+import pandas as pd
 import rpy2.robjects as robjects
-from rpy2.robjects import FloatVector, pandas2ri
+from rpy2.robjects import pandas2ri
 from rpy2.robjects.packages import importr
+from sklearn.model_selection import KFold
+
+from utils import paths
 
 
 def calculate_gam(inputs):

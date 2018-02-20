@@ -1,16 +1,14 @@
 import csv
-import math
 import pickle
 
 import numpy as np
 import scipy.io as sio
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score, mean_squared_error
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import KFold
 
-import paths
-#from LUR_preprocessing import query_osm_polygone, query_osm_highway
-from wgs84_ch1903 import *
+from utils import paths
+# from LUR_preprocessing import query_osm_polygone, query_osm_highway
+from utils.wgs84_ch1903 import *
 
 
 class Regressor:

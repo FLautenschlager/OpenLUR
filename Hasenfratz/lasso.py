@@ -3,7 +3,7 @@ Land-use regression with Lasso.
 """
 
 import sys
-from os.path import isfile, join, basename, abspath, dirname
+from os.path import join, basename, abspath, dirname
 # This is necessary so that it is possible to import files from the parent dir
 sys.path.insert(0, abspath(join(dirname(__file__), '..')))
 
@@ -18,11 +18,8 @@ from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.model_selection import KFold
 
 import numpy as np
-import pandas as pd
-import scipy.io as sio
 
-import paths
-from utils import load_input_file, write_results_file
+from utils import load_input_file, write_results_file, paths
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(

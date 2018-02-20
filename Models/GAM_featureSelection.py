@@ -1,16 +1,8 @@
-import argparse
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
 
-import numpy as np
 import pandas as pd
-import rpy2.robjects as robjects
-import scipy.io as sio
-from rpy2.robjects import pandas2ri
-from rpy2.robjects.packages import importr
 from sklearn.model_selection import KFold
-import time
 
-import paths
 from Models.GAM import GAM
 
 
@@ -75,11 +67,11 @@ class GAM_featureSelection:
 		# returns rmse, rsq, rsqval, devexpl, fac2
 		results = pd.DataFrame(results)
 
-		results.columns = ['rmse', 'rsq', 'rsqval', 'devexpl', 'fac2']
+		results.columns = ['rmse', 'rsq']
 
 		# Calculate Root-mean-square error model
 		rmse_model = results['rmse'].mean()
-		r2val = results['rsqval'].mean()
+		r2val = results['rsq'].mean()
 		#print(results['rsval'])
 		self.print('Root-mean-square error: {} particles/cm^3'.format(rmse_model))
 

@@ -1,10 +1,12 @@
-import math
 import argparse
+import math
 from os.path import join
+
 import numpy as np
 import pandas as pd
 import scipy.io as sio
-import paths
+
+from utils import paths
 
 BOUNDS_PATH = join(paths.rootdir, 'bounds')
 MODEL_VAR_PATH = join(paths.rdir, 'model_ha_variables.mat')

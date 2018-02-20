@@ -7,10 +7,10 @@ import rpy2.robjects as robjects
 import scipy.io as sio
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.packages import importr
-from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score
+from sklearn.model_selection import KFold
 
-import paths
+from utils import paths
 
 
 class GAM:
@@ -48,30 +48,17 @@ class GAM:
 		# returns rmse, rsq, rsqval, devexpl, fac2
 		results = pd.DataFrame(pool.map(self.calculate_gam, gam_inputs))
 
-		results.columns = ['rmse', 'rsq', 'rsqval', 'devexpl', 'fac2']
+		results.columns = ['rmse', 'rsq']
 
 		# Calculate Root-mean-square error model
-		rmse_model.append(results['rmse'])
-		# Get R² from summary
-		rsq_model.append(results['rsq'])
-		devexpl_model.append(results['devexpl'])
-		# Calculate Factor of 2
-		fac2_model.append(results['fac2'])
+		rmse_model = results['rmse'].mean()
+		rsq_model = results['rsq'].mean()
 
-		# calculate R2 between predicted and measured concentration
-		rsqval_model.append(results['rsqval'])
+		self.print('Root-mean-square error: {} particles/cm^3'.format(rmse_model), 1)
+		self.print('R2: {}'.format(rsq_model), 1)
 
-		self.print('Root-mean-square error: {} particles/cm^3'.format(np.mean(rmse_model)))
-		self.print('R2: {}'.format(np.mean(rsq_model)))
-		self.print('R2-val: {}'.format(np.mean(rsqval_model)))
-		self.print('DevExpl: {}'.format(np.mean(devexpl_model) * 100))
-		self.print('FAC2: {}'.format(np.mean(fac2_model)))
 
-		return np.mean(rmse_model), np.mean(rsq_model), np.mean(rsqval_model)
-
-	def print(self, message):
-		if self.verbosity>0:
-			print(message)
+		return rmse_model, rsq_model
 
 
 	def define_formula(self, feat_columns, target):
@@ -133,27 +120,23 @@ class GAM:
 		# Calculate Root-mean-square error model
 		rmse = np.sqrt(np.mean(error_model ** 2))
 
-		# Get R² from summary
-		rsq = su.rx2('r.sq')
-		devexpl = su.rx2('dev.expl')
+		rsq = r2_score(test_measure_predict['pm_measurement'], test_measure_predict['prediction'])
 
-		# Calculate Factor of 2
-		fac2_ind = test_measure_predict['pm_measurement'] / test_measure_predict['prediction']
-		fac2_ind = fac2_ind[(fac2_ind <= 2) & (fac2_ind >= 0.5)].dropna()
-		fac2 = (len(fac2_ind) / len(test_measure_predict['pm_measurement']) * 100)
-
-		# calculate R2 between predicted and measured concentration
-		r2val_formula = robjects.Formula('measurements~predictions')
-		r2val_env = r2val_formula.environment
-		r2val_env['measurements'] = test_measure_predict['pm_measurement']
-		r2val_env['predictions'] = test_measure_predict['prediction']
-		lt1 = stats.lm(r2val_formula)
-		rsqval = base.summary(lt1).rx2('r.squared')
-
-		rsqval = r2_score(test_measure_predict['pm_measurement'], test_measure_predict['prediction'])
+		self.print('Root-mean-square error: {} particles/cm^3'.format(rmse), 2)
+		self.print('R2: {}'.format(rsq), 2)
 
 		# Return metrics
-		return rmse, rsq, rsqval, devexpl, fac2
+		return rmse, rsq
+
+	def print(self, message, verbosity):
+		if verbosity <= self.verbosity:
+			if verbosity==0:
+				print(Color.CYAN + message + Color.END)
+			elif verbosity==1:
+				print(Color.RED + message + Color.END)
+			elif verbosity==2:
+				print(Color.BOLD + message + Color.END)
+
 
 
 if __name__ == '__main__':

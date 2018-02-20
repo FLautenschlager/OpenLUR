@@ -1,12 +1,10 @@
-import autosklearn.regression
-import sklearn.model_selection
-import sklearn.metrics
-import paths
-import csv
-import numpy as np
 import pickle
+
+import autosklearn.regression
+import numpy as np
 import scipy.io as sio
 
+from utils import paths
 
 if __name__ == "__main__":
 
@@ -29,4 +27,4 @@ if __name__ == "__main__":
 	regressor.fit(X_train, y_train)
 	print(regressor.show_models())
 
-	pickle.dump(regressor, open(paths.modeldatadir + file[:-4] +  "_autosklearn_Hsnfrtz_model.p", 'wb'))
+	pickle.dump(regressor, open(paths.modeldatadir + file[:-4] + "_autosklearn_Hsnfrtz_model.p", 'wb'))

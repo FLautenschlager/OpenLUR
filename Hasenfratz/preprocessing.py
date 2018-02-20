@@ -4,7 +4,7 @@ import math
 import numpy as np
 import scipy.io as sio
 
-import paths
+from utils import paths
 
 
 def clean_tramDepots(data_tram):

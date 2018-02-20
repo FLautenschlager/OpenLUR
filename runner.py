@@ -1,15 +1,16 @@
 import argparse
-import pandas as pd
-import scipy.io as sio
 import csv
-from Models.AutoSKLearn_external import AutoRegressor
 import pickle
 
-#from rpy2.rinterface import RRuntimeError
+import pandas as pd
+import scipy.io as sio
 
-#from Models.GAM import GAM
+# from Models.GAM import GAM
 from Models.AutoSKLearn import AutoSKLearn
-import paths
+from Models.AutoSKLearn_external import AutoRegressor
+from utils import paths
+
+# from rpy2.rinterface import RRuntimeError
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()

@@ -1,17 +1,18 @@
-from autosklearn.regression import AutoSklearnRegressor
-from autosklearn.metrics import mean_squared_error as mse
+import pickle
+from os import listdir, mkdir
+from os.path import join, isfile, isdir
+
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import KFold
+from autosklearn.metrics import mean_squared_error as mse
+from autosklearn.regression import AutoSklearnRegressor
 from sklearn.metrics import r2_score, mean_squared_error
-from os.path import join
-from os import mkdir
+from sklearn.model_selection import KFold
 
+from utils import paths
 # from multiprocessing import Pool
-from MyPool import MyPool as Pool
-import pickle
-import paths
-from datetime import datetime
+from utils.MyPool import MyPool as Pool
+from utils.color import Color
 
 
 class AutoRegressor:
@@ -19,8 +20,9 @@ class AutoRegressor:
 		self.njobs = njobs
 		self.niter = niter
 		self.verbosity = verbosity
-		self.groundpath = join(paths.autosklearn, features, "{}_time{}s".format(datetime.now().strftime("%Y%m%d-%H%M%S"), time))
-		mkdir(self.groundpath)
+		self.groundpath = join(paths.autosklearn, features, "time{}s".format(time))
+		if ~isdir(self.groundpath):
+			mkdir(self.groundpath)
 		self.print(self.groundpath, 1)
 		self.time = time
 
@@ -28,54 +30,75 @@ class AutoRegressor:
 
 		kf = KFold(n_splits=10, shuffle=True)
 
-		rmse_model = []
-		rsq_model = []
-
 		inputs = []
-		pool = Pool(processes=int(self.njobs))
-		results = []
+		filelist = listdir(self.groundpath)
+
+		self.print(filelist, 1)
 
 		# Hasenfratz does the 10 fold cross validation 40 times to get a better coverage
 		# of the model variables
 		for i in range(self.niter):
+
+			makeIt = False
+			for j in range(10):
+				file = "{}cv{}.p".format(i, j)
+				if ~(file in filelist):
+					makeIt = True
+
 			j = 0
-			for train_index_calib, test_index_calib in kf.split(data):
-				path = join(self.groundpath, "{}cv{}.p".format(i, j))
-				train_calib_data = data.iloc[train_index_calib]
-				test_calib_data = data.iloc[test_index_calib]
 
-				# First gather all the inputs for each GAM calculation in a list
-				inputs_single = (train_calib_data, test_calib_data, target, feat_columns, path, self.time)
-				inputs.append(inputs_single)
-				# results.append(self.calculate_AutoSk(inputs_single))
-				j += 1
+			if makeIt:
+				for train_index_calib, test_index_calib in kf.split(data):
+					iterationInput = []
+					file = "{}cv{}.p".format(i, j)
+					path = join(self.groundpath, file)
+					train_calib_data = data.iloc[train_index_calib]
+					test_calib_data = data.iloc[test_index_calib]
 
-		# Add all the GAM calculations with their respective inputs into the Pool
-		# returns rmse, rsq, rsqval, devexpl, fac2
-		results = pd.DataFrame(pool.map(self.calculate_AutoSk, inputs))
+					# First gather all the inputs for each GAM calculation in a list
+					inputs_single = (train_calib_data, test_calib_data, target, feat_columns, path, self.time)
+					iterationInput.append(inputs_single)
+					inputs.append(inputs_single)
+					# results.append(self.calculate_AutoSk(inputs_single))
+					j += 1
+
+		# Compute in parallel
+		pool = Pool(processes=int(self.njobs))
+		pool.map(self.calculate_AutoSk, inputs)
 		pool.close()
 		pool.join()
-		# results = pd.DataFrame(results)
-		results.columns = ['rmse', 'rsq']
+
+		# Load all results
+		filelist = listdir(self.groundpath)
+		rmse = []
+		r2 = []
+
+		for f in filelist:
+			try:
+				data = pickle.load(open(f, "rb"))
+				rmse.append(data['rmse'])
+				r2.append(data['r2'])
+			except:
+				pass
 
 		# Calculate Root-mean-square error model
-		rmse_model.append(results['rmse'])
+		rmse_model = np.mean(rmse)
 		# Get R² from summary
-		rsq_model.append(results['rsq'])
+		rsq_model = np.mean(r2)
 
-		self.print('Mean root-mean-square error: {} particles/cm^3'.format(np.mean(rmse_model)), 1)
-		self.print('Mean R2: {}'.format(np.mean(rsq_model)), 1)
+		self.print('Mean root-mean-square error: {} particles/cm^3'.format(rmse_model), 1)
+		self.print('Mean R2: {}'.format(rsq_model), 1)
 
-		return np.mean(rmse_model), np.mean(rsq_model)
+		return rmse_model, rsq_model, self.groundpath
 
 	def print(self, message, verbosity):
 		if verbosity <= self.verbosity:
 			if verbosity==0:
-				print(color.CYAN + message + color.END)
+				print(Color.CYAN + message + Color.END)
 			elif verbosity==1:
-				print(color.RED + message + color.END)
+				print(Color.RED + message + Color.END)
 			elif verbosity==2:
-				print(color.BOLD + message + color.END)
+				print(Color.BOLD + message + Color.END)
 
 
 
@@ -111,15 +134,3 @@ class AutoRegressor:
 
 		return rmse, r2
 
-
-class color:
-	PURPLE = '\033[95m'
-	CYAN = '\033[96m'
-	DARKCYAN = '\033[36m'
-	BLUE = '\033[94m'
-	GREEN = '\033[92m'
-	YELLOW = '\033[93m'
-	RED = '\033[91m'
-	BOLD = '\033[1m'
-	UNDERLINE = '\033[4m'
-	END = '\033[0m'

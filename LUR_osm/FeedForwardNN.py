@@ -2,16 +2,15 @@ import sys
 if "/home/florian/Code/code-2017-land-use" not in sys.path:
 	sys.path.append("/home/florian/Code/code-2017-land-use")
 
-import paths
+from utils import paths
 import csv
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
 from keras.models import Sequential
-from keras.layers import Dense, Dropout
-from keras.metrics import mean_squared_error, mae
-from keras.activations import relu
-from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+from keras.layers import Dense
+from keras.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import KFold
 import argparse
 

@@ -4,7 +4,7 @@ folds are calculated in parallel.
 """
 
 import sys
-from os.path import isfile, join, basename, abspath, dirname
+from os.path import join, basename, abspath, dirname
 # This is necessary so that it is possible to import files from the parent dir
 sys.path.insert(0, abspath(join(dirname(__file__), '..')))
 
@@ -20,12 +20,11 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
 import rpy2.robjects as robjects
-from rpy2.robjects import FloatVector, pandas2ri
+from rpy2.robjects import pandas2ri
 from rpy2.robjects.packages import importr
 from rpy2.rinterface import RRuntimeError
 
-import paths
-from utils import load_input_file, write_results_file
+from utils import load_input_file, write_results_file, paths
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(
@@ -282,7 +281,7 @@ if __name__ == '__main__':
     calib_data = load_input_file(args.input_file_path)
 
     model_var = pd.DataFrame(sio.loadmat(
-        paths.rdir + 'model_ha_variables.mat')['model_variables'])
+	    paths.rdir + 'model_ha_variables.mat')['model_variables'])
     model_var.columns = ['y', 'x', 'population', 'industry', 'floorlevel', 'heating', 'elevation', 'streetsize', 'signaldist',
                          'streetdist', 'slope', 'expo', 'traffic', 'streetdist_m', 'streetdist_l', 'trafficdist_l', 'trafficdist_h', 'traffic_tot']
 

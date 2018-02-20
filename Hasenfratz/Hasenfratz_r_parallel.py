@@ -1,14 +1,16 @@
-import scipy.io as sio
+import argparse
+from multiprocessing import Pool, cpu_count
+
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import KFold
-import paths
-from multiprocessing import Pool, cpu_count
-import argparse
-
 import rpy2.robjects as robjects
-from rpy2.robjects import FloatVector, pandas2ri
+import scipy.io as sio
+from rpy2.robjects import pandas2ri
 from rpy2.robjects.packages import importr
+from sklearn.model_selection import KFold
+
+from utils import paths
+
 
 def calculate_gam(inputs):
     train_calib_data, test_calib_data, test_model_var = inputs
@@ -94,7 +96,7 @@ if __name__ == '__main__':
                           "signaldist", "streetdist", "slope", "expo", "traffic", "streetdist_m", "streetdist_l", "trafficdist_l", "trafficdist_h", "traffic_tot"]
 
     model_var = pd.DataFrame(sio.loadmat(
-        paths.rdir + 'model_ha_variables.mat')['model_variables'])
+	    paths.rdir + 'model_ha_variables.mat')['model_variables'])
     model_var.columns = ["x", "y", "population", "industry", "floorlevel", "heating", "elevation", "streetsize", "signaldist",
                          "streetdist", "slope", "expo", "traffic", "streetdist_m", "streetdist_l", "trafficdist_l", "trafficdist_h", "traffic_tot"]
 

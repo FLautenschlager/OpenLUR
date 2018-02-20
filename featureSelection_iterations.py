@@ -1,14 +1,14 @@
 import argparse
 import csv
 import pickle
+from os import listdir, mkdir
+from os.path import join, isfile, isdir
 
 import pandas as pd
 
-import paths
 from Models.GAM import GAM
 from Models.GAM_featureSelection import GAM_featureSelection
-from os.path import join, isfile, isdir
-from os import listdir, mkdir
+from utils import paths
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
