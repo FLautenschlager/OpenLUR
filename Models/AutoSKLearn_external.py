@@ -78,10 +78,10 @@ class AutoRegressor:
 		for f in filelist:
 			try:
 				data = pickle.load(open(f, "rb"))
+				print(data)
 				rmse.append(data['rmse'])
 				r2.append(data['r2'])
 			except:
-				print(f)
 				pass
 
 		# Calculate Root-mean-square error model
