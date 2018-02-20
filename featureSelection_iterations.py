@@ -92,7 +92,7 @@ if __name__ == '__main__':
 		gam = GAM_featureSelection(njobs=njobs, verbosity=0)
 		final_features = gam.select_features(data, feat_columns[:], target)
 		gam = GAM(njobs=njobs, niter=iterations, verbosity=1)
-		rmse, r2, r2val = gam.test_model(data, final_features, target)
+		rmse, r2 = gam.test_model(data, final_features, target)
 
-		pickle.dump({'rmse': rmse, 'r2': r2, 'r2val': r2val, 'features': final_features},
+		pickle.dump({'rmse': rmse, 'r2': r2, 'features': final_features},
 		            open(join(dir, "{}.p".format(i)), 'wb'))

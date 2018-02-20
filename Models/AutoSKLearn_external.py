@@ -111,6 +111,8 @@ class AutoRegressor:
 		y_train = train_data[target]
 		y_test = test_data[target]
 
+		self.print("Doing {}".format(path), 1)
+
 		automl = AutoSklearnRegressor(time_left_for_this_task=time,
 		                              per_run_time_limit=time - 1,
 		                              ensemble_size=50,
