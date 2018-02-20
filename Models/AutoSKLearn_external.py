@@ -79,7 +79,6 @@ class AutoRegressor:
 
 			try:
 				data = pickle.load(open(join(self.groundpath, f), "rb"))
-				print(data)
 				rmse.append(data['rmse'])
 				r2.append(data['r2'])
 			except:
