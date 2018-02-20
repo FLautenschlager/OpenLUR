@@ -44,7 +44,7 @@ class AutoRegressor:
 			makeIt = False
 			for j in range(10):
 				file = "{}cv{}.p".format(i, j)
-				if ~(file in filelist):
+				if not (file in filelist):
 					makeIt = True
 
 			j = 0
