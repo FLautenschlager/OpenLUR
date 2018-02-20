@@ -21,7 +21,8 @@ class AutoRegressor:
 		self.niter = niter
 		self.verbosity = verbosity
 		self.groundpath = join(paths.autosklearn, features, "time{}s".format(time))
-		if ~isdir(self.groundpath):
+		#print(not isdir(self.groundpath))
+		if not isdir(self.groundpath):
 			mkdir(self.groundpath)
 		self.print(self.groundpath, 1)
 		self.time = time
@@ -33,7 +34,8 @@ class AutoRegressor:
 		inputs = []
 		filelist = listdir(self.groundpath)
 
-		self.print(filelist, 1)
+		for f in filelist:
+			self.print(f, 1)
 
 		# Hasenfratz does the 10 fold cross validation 40 times to get a better coverage
 		# of the model variables
