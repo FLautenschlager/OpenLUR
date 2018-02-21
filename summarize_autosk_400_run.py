@@ -38,7 +38,7 @@ if __name__ == '__main__':
 	for p in path[-1]:
 		outpath = join(outpath, p)
 
-	filelist = listdir(str(path))
+	filelist = listdir(str(args.path))
 
 	input = []
 	for file in filelist:
