@@ -9,7 +9,7 @@ import scipy.io as sio
 from Models.AutoSKLearn import AutoSKLearn
 from Models.AutoSKLearn_external import AutoRegressor
 from utils import paths
-from Models import SGD, RF, knn, Adaboost
+from Models import SGD, RF, knn, Adaboost, MLP
 from Models.SKlearnModels import *
 
 # from rpy2.rinterface import RRuntimeError
@@ -21,7 +21,7 @@ if __name__ == '__main__':
 	                    help="Dataset to build model on: (1) OpenSense, (2) OSM, (3) OSM + distances", type=int)
 	parser.add_argument("-i", "--iterations", help="Number of iterations to mean on", type=int)
 	parser.add_argument("-p", "--processes", help="Number of parallel processes", type=int)
-	parser.add_argument("-m", "--model", help="Model: (1) GAM, (2) Auto-sklearn 40*10, (3) Auto-sklearn internal cv", type=int)
+	parser.add_argument("-m", "--model", help="Model: (GAM) GAM, (AML) Auto-sklearn 40*10, (AMLlong) Auto-sklearn internal cv", type=str)
 	parser.add_argument("-t", "--time", help="Give total time in seconds", type=int)
 
 	args = parser.parse_args()
@@ -97,25 +97,28 @@ if __name__ == '__main__':
 		#	gam.test_model(data, feat_columns, target)
 		#except RRuntimeError:
 		#	print("Too many features for data")
-	elif args.model==2:
+	elif args.model=="AML":
 		model = AutoRegressor(njobs=njobs, features=feat + "_s{}".format(args.seasonNumber), niter=iterations, verbosity=2, time=args.time)
 		model.test_model(data, feat_columns, target)
-	elif args.model==3:
+	elif args.model=="AMLlong":
 		model = AutoSKLearn(njobs=njobs, features=feat + "_s{}".format(args.seasonNumber), time=args.time)
 		result = model.test_model(data, feat_columns, target)
 		pickle.dump(result, open(paths.autosklearn + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
-	elif args.model==4:
+	elif args.model=="SVD":
 		print("start SVD")
 		model = SGD.SGD(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
-	elif args.model==5:
+	elif args.model=="RF":
 		model = RF.RF(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
-	elif args.model==6:
+	elif args.model=="KNN":
 		model = knn.KNN(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
-	elif args.model==7:
+	elif args.model=="ADA":
 		model = Adaboost.Adaboost(njobs=njobs, niter=iterations, verbosity=2)
+		model.test_model(data, feat_columns, target)
+	elif args.model=="MLP":
+		model = MLP.MLP(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 
 
