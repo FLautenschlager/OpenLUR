@@ -64,8 +64,8 @@ class GWR:
 	def calculateModel(self, inputs):
 		train_data, test_data, target, columns = inputs
 
-		X_train = train_data[columns].as_matrix().reshape((-1,1))
-		X_test = test_data[columns].as_matrix().reshape((-1,1))
+		X_train = train_data[columns].as_matrix()
+		X_test = test_data[columns].as_matrix()
 
 		y_train = train_data[target].as_matrix().reshape((-1,1))
 		y_test = test_data[target].as_matrix().reshape((-1,1))
