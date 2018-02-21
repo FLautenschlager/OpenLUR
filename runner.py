@@ -115,7 +115,7 @@ if __name__ == '__main__':
 		model = knn.KNN(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model==7:
-		model = Adaboost(njobs=njobs, niter=iterations, verbosity=2)
+		model = Adaboost.Adaboost(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 
 
