@@ -1,4 +1,4 @@
-from Models import SklearnWrapper
+from Models.SklearnWrapper import SklearnWrapper
 from sklearn.linear_model import SGDRegressor
 from sklearn.ensemble import RandomForestRegressor
 
