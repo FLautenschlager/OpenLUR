@@ -9,6 +9,7 @@ import scipy.io as sio
 from Models.AutoSKLearn import AutoSKLearn
 from Models.AutoSKLearn_external import AutoRegressor
 from utils import paths
+from Models import SGD
 
 # from rpy2.rinterface import RRuntimeError
 
@@ -102,6 +103,9 @@ if __name__ == '__main__':
 		model = AutoSKLearn(njobs=njobs, features=feat + "_s{}".format(args.seasonNumber), time=args.time)
 		result = model.test_model(data, feat_columns, target)
 		pickle.dump(result, open(paths.autosklearn + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
+	elif args.model==4:
+		model = SGD.SGD(njobs=njobs, niter=iterations, verbosity=2)
+		model.test_model(data, feat_columns, target)
 
 
 
