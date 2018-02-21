@@ -16,7 +16,7 @@ from utils.color import Color
 from sklearn.linear_model import SGDRegressor as model
 
 
-class AutoRegressor:
+class SGD:
 	def __init__(self, njobs, niter=40, verbosity=0):
 		self.njobs = njobs
 		self.niter = niter
