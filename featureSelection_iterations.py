@@ -96,3 +96,5 @@ if __name__ == '__main__':
 
 		pickle.dump({'rmse': rmse, 'r2': r2, 'features': final_features},
 		            open(join(dir, "{}.p".format(i)), 'wb'))
+
+		print("Saved!")
