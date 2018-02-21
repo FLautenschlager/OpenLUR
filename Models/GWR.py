@@ -73,8 +73,8 @@ class GWR:
 		loc_train = train_data[['x', 'y']].as_matrix()
 		loc_test = test_data[['x', 'y']].as_matrix()
 
-		bw = Sel_BW(loc_train, y_train, X_train).search(criterion='AICc')
-		model = gwr(loc_train, y_train, X_train, bw=bw)
+		#bw = Sel_BW(loc_train, y_train, X_train).search(criterion='AICc')
+		model = gwr(loc_train, y_train, X_train, bw=90)
 		model.fit()
 
 		pred = model.predict(loc_test, X_test).predy
