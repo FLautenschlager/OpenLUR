@@ -9,7 +9,7 @@ import scipy.io as sio
 from Models.AutoSKLearn import AutoSKLearn
 from Models.AutoSKLearn_external import AutoRegressor
 from utils import paths
-from Models import SGD, RF
+from Models import SGD, RF, knn
 from Models.SKlearnModels import *
 
 # from rpy2.rinterface import RRuntimeError
@@ -110,6 +110,9 @@ if __name__ == '__main__':
 		model.test_model(data, feat_columns, target)
 	elif args.model==5:
 		model = RF.RF(njobs=njobs, niter=iterations, verbosity=2)
+		model.test_model(data, feat_columns, target)
+	elif args.model==6:
+		model = knn.KNN(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 
 

@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor as model
+from sklearn.neighbors import KNeighborsRegressor as model
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import KFold
 
@@ -9,7 +9,7 @@ from utils.MyPool import MyPool as Pool
 from utils.color import Color
 
 
-class RF:
+class KNN:
 	def __init__(self, njobs, niter=40, verbosity=0):
 		self.njobs = njobs
 		self.niter = niter
