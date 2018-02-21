@@ -124,7 +124,7 @@ class AutoRegressor:
 		                              resampling_strategy='holdout',
 		                              resampling_strategy_arguments={'train_size': 0.8})
 
-		automl.fit(X_train, y_train, metric=mse)
+		automl.fit(X_train, y_train)
 
 		pred = automl.predict(X_test)
 
@@ -135,7 +135,7 @@ class AutoRegressor:
 		self.print('Root-mean-square error: {} particles/cm^3'.format(rmse), 2)
 		self.print('R2: {}'.format(r2), 2)
 
-		pickle.dump({'best_model': automl.get_models_with_weights()[0][1].configuration.get_dictionary()['regressor:__choice__'], 'r2': r2, 'rmse': rmse}, open(path, 'wb'))
+		pickle.dump({'best_model': automl.get_models_with_weights(), 'r2': r2, 'rmse': rmse}, open(path, 'wb'))
 
 		return rmse, r2
 

@@ -11,6 +11,7 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import KFold
 
 from utils import paths
+from utils.color import Color
 
 
 class GAM:
