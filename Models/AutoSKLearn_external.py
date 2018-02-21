@@ -117,7 +117,7 @@ class AutoRegressor:
 		# self.print("Doing {}".format(path), 1)
 
 		automl = AutoSklearnRegressor(time_left_for_this_task=time,
-		                              per_run_time_limit=time - 1,
+		                              per_run_time_limit=time - 3,
 		                              ensemble_size=50,
 		                              ensemble_nbest=50,
 		                              ml_memory_limit=4096,
