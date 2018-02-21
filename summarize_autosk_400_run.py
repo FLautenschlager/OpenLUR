@@ -40,7 +40,6 @@ if __name__ == '__main__':
 
 	print(outpath)
 
-	stop
 	filelist = listdir(str(args.path))
 
 	input = []
@@ -54,6 +53,7 @@ if __name__ == '__main__':
 
 	results.columns = ["rmse", "r2", "model"]
 
+	print(outpath)
 	results.to_csv(outpath + ".csv")
 
 
