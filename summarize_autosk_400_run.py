@@ -13,8 +13,8 @@ from os.path import join, isfile, isdir
 # from rpy2.rinterface import RRuntimeError
 
 
-def process_single(file)
-	data = pickle.load(open(f, "rb"))
+def process_single(file):
+	data = pickle.load(open(file, "rb"))
 	rmse = data['rmse']
 	r2 = data['r2']
 
