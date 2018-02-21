@@ -39,8 +39,13 @@ if __name__ == '__main__':
 		outpath = join(outpath, p)
 
 	filelist = args.path + listdir(path)
+
+	input = []
+	for file in filelist:
+		input.append(join(args.path, file))
+
 	pool = MyPool(processes=args.numberWorkers)
-	results = pd.DataFrame(pool.map(process_single, filelist))
+	results = pd.DataFrame(pool.map(process_single, input))
 	pool.close()
 	pool.join()
 
