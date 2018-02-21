@@ -9,7 +9,7 @@ from utils.color import Color
 
 
 
-class SKlearnWrapper:
+class SklearnWrapper:
 	def __init__(self, njobs, model, niter=40, verbosity=0):
 		self.njobs = njobs
 		self.niter = niter
