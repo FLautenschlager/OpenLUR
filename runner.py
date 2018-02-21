@@ -104,6 +104,7 @@ if __name__ == '__main__':
 		result = model.test_model(data, feat_columns, target)
 		pickle.dump(result, open(paths.autosklearn + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
 	elif args.model==4:
+		print("start SVD")
 		model = SGD.SGD(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 
