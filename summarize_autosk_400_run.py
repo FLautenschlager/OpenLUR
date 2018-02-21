@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
 	path = args.path.split("/")
 	outpath = ""
-	for p in path[-1]:
+	for p in path[:-1]:
 		outpath = join(outpath, p)
 
 	print(outpath)
