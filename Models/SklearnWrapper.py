@@ -57,7 +57,7 @@ class SklearnWrapper:
 
 
 	def getCalculateModel(self):
-		def calculateModel(self, inputs):
+		def calculateModel(inputs):
 			train_data, test_data, target, columns = inputs
 
 			X_train = train_data[columns]
