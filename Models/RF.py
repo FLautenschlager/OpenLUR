@@ -66,7 +66,8 @@ class RF:
 
 		# self.print("Doing {}".format(path), 1)
 
-		m = model(n_estimators=100)
+		#m = model(n_estimators=100)
+		m = model()
 		m.fit(X_train, y_train)
 
 		pred = m.predict(X_test)
