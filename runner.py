@@ -10,6 +10,7 @@ from Models.AutoSKLearn import AutoSKLearn
 from Models.AutoSKLearn_external import AutoRegressor
 from utils import paths
 from Models import SGD
+from Models.SKlearnModels import *
 
 # from rpy2.rinterface import RRuntimeError
 
@@ -105,7 +106,10 @@ if __name__ == '__main__':
 		pickle.dump(result, open(paths.autosklearn + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
 	elif args.model==4:
 		print("start SVD")
-		model = SGD.SGD(njobs=njobs, niter=iterations, verbosity=2)
+		model = getSGD(njobs=njobs, niter=iterations, verbosity=2)
+		model.test_model(data, feat_columns, target)
+	elif args.model==5:
+		model = getRF(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 
 
