@@ -9,7 +9,7 @@ import scipy.io as sio
 from Models.AutoSKLearn import AutoSKLearn
 from Models.AutoSKLearn_external import AutoRegressor
 from utils import paths
-from Models import SGD, RF, knn, Adaboost, MLP
+from Models import SGD, RF, knn, Adaboost, MLP, GWR
 from Models.SKlearnModels import *
 
 # from rpy2.rinterface import RRuntimeError
@@ -117,8 +117,11 @@ if __name__ == '__main__':
 	elif args.model=="ADA":
 		model = Adaboost.Adaboost(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
-	elif args.model=="MLP":
+	elif args.model == "MLP":
 		model = MLP.MLP(njobs=njobs, niter=iterations, verbosity=2)
+		model.test_model(data, feat_columns, target)
+	elif args.model=="GWR":
+		model = GWR.GWR(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 
 
