@@ -124,7 +124,7 @@ class AutoRegressor:
 		                              resampling_strategy='holdout',
 		                              resampling_strategy_arguments={'train_size': 0.8})
 
-		automl.fit(X_train, y_train)
+		automl.fit(X_train, y_train, metric=mse)
 
 		pred = automl.predict(X_test)
 

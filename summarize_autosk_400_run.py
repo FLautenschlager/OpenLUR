@@ -22,8 +22,13 @@ def process_single(file):
 		model = data['best_model']
 		weight = 0
 	else:
-		model = data['model'].get_models_with_weights()[0][1].configuration.get_dictionary()['regressor:__choice__']
-		weight = data['model'].get_models_with_weights()[0][0]
+		try:
+			models = data['model'].get_models_with_weights()
+		except:
+			models = data['model']
+
+		model = models[0][1].configuration.get_dictionary()['regressor:__choice__']
+		weight = models[0][0]
 
 	return rmse, r2, model, weight
 
