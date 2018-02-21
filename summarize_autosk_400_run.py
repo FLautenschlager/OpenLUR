@@ -20,10 +20,12 @@ def process_single(file):
 
 	if 'best_model' in data.keys():
 		model = data['best_model']
+		weight = 0
 	else:
 		model = data['model'].get_models_with_weights()[0][1].configuration.get_dictionary()['regressor:__choice__']
+		weight = data['model'].get_models_with_weights()[0][0]
 
-	return rmse, r2, model
+	return rmse, r2, model, weight
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -51,7 +53,9 @@ if __name__ == '__main__':
 	pool.close()
 	pool.join()
 
-	results.columns = ["rmse", "r2", "model"]
+
+	results.columns = ["rmse", "r2", "model", 'weight']
+
 
 	print(outpath)
 	results.to_csv(outpath + ".csv")
