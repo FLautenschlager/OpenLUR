@@ -38,6 +38,9 @@ if __name__ == '__main__':
 	for p in path[-1]:
 		outpath = join(outpath, p)
 
+	print(outpath)
+
+	stop
 	filelist = listdir(str(args.path))
 
 	input = []
