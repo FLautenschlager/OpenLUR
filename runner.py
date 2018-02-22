@@ -126,8 +126,7 @@ if __name__ == '__main__':
 			                "residential2000m", "industrial550m", "industrial1700m", "industrial1850m",
 			                "industrial2300m", "industrial2450m", "industrial2950m", "commercial2100m", "bigStreet100m",
 			                "bigStreet50m", "bigStreet200m", "distanceTrafficSignal", "distanceMotorway"]
-			feat_columns = ["residential1300m", "residential1850m", "residential1950m", "industrial1700m", "industrial1850m", "industrial2300m", "industrial2450m", "industrial2950m", "commercial2100m", "bigStreet100m", "bigStreet50m", "bigStreet200m"]
-			feat_columns = ["residential1100m", "distanceTrafficSignal", "distanceMotorway", "residential2000m", "industrial550m"]
+			feat_columns = ["residential1100m", "distanceTrafficSignal", "distanceMotorway", "residential2000m", "residential1950m", "residential1300m", "residential1850m", "industrial1850m", "industrial2300m", "commercial2100m", "bigStreet100m", "bigStreet50m", "bigStreet200m", "industrial2950m", "industrial2450m", "industrial1700m"]
 		print(feat_columns)
 		model = GWR.GWR(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
