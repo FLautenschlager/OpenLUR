@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor as model
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import KFold
+from scipy.stats import shapiro
 
 # from multiprocessing import Pool
 from utils.MyPool import MyPool as Pool
@@ -50,6 +51,7 @@ class RF:
 
 		self.print('Mean root-mean-square error: {} particles/cm^3'.format(rmse_model), 1)
 		self.print('Mean R2: {}'.format(rsq_model), 1)
+		self.print('The RMSE is normally distributed with W={}'.format(shapiro(results.rmse.values)))
 
 		return rmse_model, rsq_model
 

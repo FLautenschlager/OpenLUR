@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import KFold
-
+from scipy.stats import shapiro
 
 from utils.MyPool import MyPool as Pool
 from utils.color import Color
@@ -10,11 +10,11 @@ from utils.color import Color
 
 
 class SklearnWrapper:
-	def __init__(self, njobs, model, niter=40, verbosity=0):
+	def __init__(self, njobs, niter=40, verbosity=0):
 		self.njobs = njobs
 		self.niter = niter
 		self.verbosity = verbosity
-		self.model = model
+
 
 	def test_model(self, data, feat_columns, target):
 
@@ -37,7 +37,8 @@ class SklearnWrapper:
 
 
 		# Compute in parallel
-		cm = self.getCalculateModel()
+		#cm = self.getCalculateModel()
+		cm = self.calculateModel
 		pool = Pool(processes=int(self.njobs))
 		results = pd.DataFrame(pool.map(cm, inputs))
 		pool.close()
@@ -52,35 +53,36 @@ class SklearnWrapper:
 
 		self.print('Mean root-mean-square error: {} particles/cm^3'.format(rmse_model), 1)
 		self.print('Mean R2: {}'.format(rsq_model), 1)
+		self.print('The RMSE is normally distributed with W={}'.format(shapiro(results.rmse.values)[0]), 1)
 
 		return rmse_model, rsq_model
 
 
-	def getCalculateModel(self):
-		def calculateModel(inputs):
-			train_data, test_data, target, columns = inputs
+	#def getCalculateModel(self):
+	def calculateModel(self, inputs):
+		train_data, test_data, target, columns = inputs
 
-			X_train = train_data[columns]
-			X_test = test_data[columns]
+		X_train = train_data[columns]
+		X_test = test_data[columns]
 
-			y_train = train_data[target]
-			y_test = test_data[target]
+		y_train = train_data[target]
+		y_test = test_data[target]
 
-			# self.print("Doing {}".format(path), 1)
+		# self.print("Doing {}".format(path), 1)
 
-			m = self.model()
-			m.fit(X_train, y_train)
+		m = self.model()
+		m.fit(X_train, y_train)
 
-			pred = m.predict(X_test)
+		pred = m.predict(X_test)
 
-			rmse = np.sqrt(mean_squared_error(y_test, pred))
-			r2 = r2_score(y_test, pred)
+		rmse = np.sqrt(mean_squared_error(y_test, pred))
+		r2 = r2_score(y_test, pred)
 
-			self.print('Root-mean-square error: {} particles/cm^3'.format(rmse), 2)
-			self.print('R2: {}'.format(r2), 2)
+		self.print('Root-mean-square error: {} particles/cm^3'.format(rmse), 2)
+		self.print('R2: {}'.format(r2), 2)
 
-			return rmse, r2
-		return calculateModel
+		return rmse, r2
+		#return calculateModel
 
 
 	def print(self, message, verbosity):

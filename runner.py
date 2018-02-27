@@ -9,8 +9,7 @@ import scipy.io as sio
 from Models.AutoSKLearn import AutoSKLearn
 from Models.AutoSKLearn_external import AutoRegressor
 from utils import paths
-from Models import SGD, RF, knn, Adaboost, MLP, GWR
-from Models.SKlearnModels import *
+from Models.Sklearn_models import RF, RF100, Adaboost, SGD, MLP, GWR, KNN
 
 # from rpy2.rinterface import RRuntimeError
 
@@ -104,21 +103,23 @@ if __name__ == '__main__':
 		model = AutoSKLearn(njobs=njobs, features=feat + "_s{}".format(args.seasonNumber), time=args.time)
 		result = model.test_model(data, feat_columns, target)
 		pickle.dump(result, open(paths.autosklearn + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
-	elif args.model=="SVD":
-		print("start SVD")
-		model = SGD.SGD(njobs=njobs, niter=iterations, verbosity=2)
+	elif args.model=="SGD":
+		model = SGD(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model=="RF":
-		model = RF.RF(njobs=njobs, niter=iterations, verbosity=2)
+		model = RF(njobs=njobs, niter=iterations, verbosity=2)
+		model.test_model(data, feat_columns, target)
+	elif args.model == "RF100":
+		model = RF100(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model=="KNN":
-		model = knn.KNN(njobs=njobs, niter=iterations, verbosity=2)
+		model = KNN(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model=="ADA":
-		model = Adaboost.Adaboost(njobs=njobs, niter=iterations, verbosity=2)
+		model = Adaboost(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model == "MLP":
-		model = MLP.MLP(njobs=njobs, niter=iterations, verbosity=2)
+		model = MLP(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model=="GWR":
 		if (feat=="OSM_land_use")|(feat=="OSM_land_use_distances"):
@@ -128,7 +129,7 @@ if __name__ == '__main__':
 			                "bigStreet50m", "bigStreet200m", "distanceTrafficSignal", "distanceMotorway"]
 			feat_columns = ["residential1100m", "distanceTrafficSignal", "distanceMotorway", "residential2000m", "residential1950m", "residential1300m", "residential1850m", "industrial1850m", "industrial2300m", "commercial2100m", "bigStreet100m", "bigStreet50m", "bigStreet200m", "industrial2950m", "industrial2450m", "industrial1700m"]
 		print(feat_columns)
-		model = GWR.GWR(njobs=njobs, niter=iterations, verbosity=2)
+		model = GWR(njobs=njobs, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 
 
