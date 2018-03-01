@@ -9,7 +9,7 @@ import scipy.io as sio
 from Models.AutoSKLearn import AutoSKLearn
 from Models.AutoSKLearn_external import AutoRegressor
 from utils import paths
-from Models.Sklearn_models import RF, RF100, Adaboost, SGD, MLP, GWR, KNN
+from Models.Sklearn_models import RF, RF100, Adaboost, SGD, MLP, GWR, KNN, AutoRF
 
 
 if __name__ == '__main__':
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 		try:
 			from Models.GAM import GAM
 			from rpy2.rinterface import RRuntimeError
-			gam = GAM(njobs=njobs, niter=iterations, verbosity=1)
+			gam = GAM(njobs=njobs, niter=iterations, verbosity=1, name=outpath)
 			if (feat == "OSM_land_use_distances"):
 				feat_columns = ["residential1100m", "distanceTrafficSignal", "distanceMotorway", "residential2000m",
 								"residential1950m", "residential1300m", "residential1850m", "industrial1850m",
@@ -134,6 +134,9 @@ if __name__ == '__main__':
 		model.test_model(data, feat_columns, target)
 	elif args.model == "MLP":
 		model = MLP(njobs=njobs, name=outpath, niter=iterations, verbosity=2)
+		model.test_model(data, feat_columns, target)
+	elif args.model == "AutoRF":
+		model = AutoRF(njobs=njobs, name=outpath, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model=="GWR":
 		if (feat=="OSM_land_use_distances"):

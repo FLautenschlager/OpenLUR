@@ -13,14 +13,19 @@ from scipy.stats import shapiro
 
 from utils import paths
 from utils.color import Color
+import pickle
+from os.path import join
+import utils.paths
 
 
 class GAM:
-	def __init__(self, njobs, niter=40, score="RMSE", verbosity=0):
+	def __init__(self, njobs, niter=40, score="RMSE", verbosity=0, name="GAM"):
 		self.njobs = njobs
 		self.niter = niter
 		self.score = score
 		self.verbosity = verbosity
+		self.out = utils.paths.modeldatadir
+		self.name = name
 
 	def test_model(self, data, feat_columns, target):
 
@@ -60,6 +65,8 @@ class GAM:
 		self.print('R2: {}'.format(rsq_model), 1)
 		self.print('The RMSE is normally distributed with W={}'.format(shapiro(results.rmse.values)[0]), 1)
 
+		print(join(self.out + self.name + ".p"))
+		pickle.dump(results, open(join(self.out + self.name + ".p"), "wb"))
 
 		return rmse_model, rsq_model
 

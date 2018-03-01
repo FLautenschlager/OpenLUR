@@ -5,9 +5,11 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from gwr.sel_bw import Sel_BW
 from gwr.gwr import GWR as gwr
+from autosklearn.regression import AutoSklearnRegressor
 
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
+
 
 class RF(SklearnWrapper):
 	def __init__(self, njobs, name, niter=40, verbosity=0):
@@ -26,10 +28,11 @@ class RF100(SklearnWrapper):
 
 
 class Adaboost(SklearnWrapper):
-	def __init__(self, njobs, niter=40, verbosity=0):
-		super().__init__(njobs, name, niter=niter, verbosity=verbosity)
+	def __init__(self, njobs, name, niter=40, verbosity=0):
+		super().__init__(njobs, niter=niter, verbosity=verbosity)
 		self.model = AdaBoostRegressor
 		self.name = name
+
 
 class SGD(SklearnWrapper):
 	def __init__(self, njobs, name, niter=40, verbosity=0):
@@ -63,8 +66,8 @@ class GWR(SklearnWrapper):
 		X_train = train_data[columns].as_matrix()
 		X_test = test_data[columns].as_matrix()
 
-		y_train = train_data[target].as_matrix().reshape((-1,1))
-		y_test = test_data[target].as_matrix().reshape((-1,1))
+		y_train = train_data[target].as_matrix().reshape((-1, 1))
+		y_test = test_data[target].as_matrix().reshape((-1, 1))
 
 		loc_train = train_data[['x', 'y']].as_matrix()
 		loc_test = test_data[['x', 'y']].as_matrix()
@@ -84,4 +87,19 @@ class GWR(SklearnWrapper):
 		return rmse, r2
 
 
+class AutoRF(SklearnWrapper):
+	def __init__(self, njobs, name, niter=40, verbosity=0, time=60):
+		super().__init__(njobs, niter=niter, verbosity=verbosity)
+		self.name = name
+		self.time = time
 
+	def model(self):
+		m = AutoSklearnRegressor(time_left_for_this_task=self.time,
+								 per_run_time_limit=self.time - 3,
+								 ensemble_size=1,
+								 ensemble_nbest=1,
+								 include_estimators=["random_forest"],
+								 ml_memory_limit=4096,
+								 resampling_strategy='holdout',
+								 resampling_strategy_arguments={'train_size': 0.8})
+		return m
