@@ -9,6 +9,7 @@ from rpy2.robjects import pandas2ri
 from rpy2.robjects.packages import importr
 from sklearn.metrics import r2_score
 from sklearn.model_selection import KFold
+from scipy.stats import shapiro
 
 from utils import paths
 from utils.color import Color
@@ -57,6 +58,7 @@ class GAM:
 
 		self.print('Root-mean-square error: {} particles/cm^3'.format(rmse_model), 1)
 		self.print('R2: {}'.format(rsq_model), 1)
+		self.print('The RMSE is normally distributed with W={}'.format(shapiro(results.rmse.values)[0]), 1)
 
 
 		return rmse_model, rsq_model

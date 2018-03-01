@@ -7,13 +7,16 @@ from scipy.stats import shapiro
 from utils.MyPool import MyPool as Pool
 from utils.color import Color
 
-
+import utils.paths
+import pickle
+from os.path import join
 
 class SklearnWrapper:
 	def __init__(self, njobs, niter=40, verbosity=0):
 		self.njobs = njobs
 		self.niter = niter
 		self.verbosity = verbosity
+		self.out = utils.paths.modeldatadir
 
 
 	def test_model(self, data, feat_columns, target):
@@ -54,6 +57,8 @@ class SklearnWrapper:
 		self.print('Mean root-mean-square error: {} particles/cm^3'.format(rmse_model), 1)
 		self.print('Mean R2: {}'.format(rsq_model), 1)
 		self.print('The RMSE is normally distributed with W={}'.format(shapiro(results.rmse.values)[0]), 1)
+
+		pickle.dump(results, open(join(self.out + self.name + ".p"), "wb"))
 
 		return rmse_model, rsq_model
 

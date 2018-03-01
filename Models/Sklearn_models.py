@@ -10,14 +10,16 @@ import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 
 class RF(SklearnWrapper):
-	def __init__(self, njobs, niter=40, verbosity=0):
+	def __init__(self, njobs, name, niter=40, verbosity=0):
 		super().__init__(njobs, niter=niter, verbosity=verbosity)
 		self.model = RandomForestRegressor
+		self.name = name
 
 
 class RF100(SklearnWrapper):
-	def __init__(self, njobs, niter=40, verbosity=0):
+	def __init__(self, njobs, name, niter=40, verbosity=0):
 		super().__init__(njobs, niter=niter, verbosity=verbosity)
+		self.name = name
 
 	def model(self):
 		return RandomForestRegressor(n_estimators=100)
@@ -25,31 +27,35 @@ class RF100(SklearnWrapper):
 
 class Adaboost(SklearnWrapper):
 	def __init__(self, njobs, niter=40, verbosity=0):
-		super().__init__(njobs, niter=niter, verbosity=verbosity)
+		super().__init__(njobs, name, niter=niter, verbosity=verbosity)
 		self.model = AdaBoostRegressor
-
+		self.name = name
 
 class SGD(SklearnWrapper):
-	def __init__(self, njobs, niter=40, verbosity=0):
+	def __init__(self, njobs, name, niter=40, verbosity=0):
 		super().__init__(njobs, niter=niter, verbosity=verbosity)
 		self.model = SGDRegressor
+		self.name = name
 
 
 class MLP(SklearnWrapper):
-	def __init__(self, njobs, niter=40, verbosity=0):
+	def __init__(self, njobs, name, niter=40, verbosity=0):
 		super().__init__(njobs, niter=niter, verbosity=verbosity)
 		self.model = MLPRegressor
+		self.name = name
 
 
 class KNN(SklearnWrapper):
-	def __init__(self, njobs, niter=40, verbosity=0):
+	def __init__(self, njobs, name, niter=40, verbosity=0):
 		super().__init__(njobs, niter=niter, verbosity=verbosity)
 		self.model = KNeighborsRegressor
+		self.name = name
 
 
 class GWR(SklearnWrapper):
-	def __init__(self, njobs, niter=40, verbosity=0):
+	def __init__(self, njobs, name, niter=40, verbosity=0):
 		super().__init__(njobs, niter=niter, verbosity=verbosity)
+		self.name = name
 
 	def calculateModel(self, inputs):
 		train_data, test_data, target, columns = inputs

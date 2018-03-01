@@ -1,17 +1,16 @@
 import argparse
 import csv
 import pickle
+from os.path import join
 
 import pandas as pd
 import scipy.io as sio
 
-# from Models.GAM import GAM
 from Models.AutoSKLearn import AutoSKLearn
 from Models.AutoSKLearn_external import AutoRegressor
 from utils import paths
 from Models.Sklearn_models import RF, RF100, Adaboost, SGD, MLP, GWR, KNN
 
-# from rpy2.rinterface import RRuntimeError
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -89,13 +88,28 @@ if __name__ == '__main__':
 	else:
 		njobs = 1
 
-	if args.model==1:
-		print("Install newer R")
-		#gam = GAM(njobs=njobs, niter=iterations, verbosity=1)
-		#try:
-		#	gam.test_model(data, feat_columns, target)
-		#except RRuntimeError:
-		#	print("Too many features for data")
+	outpath = join(str(args.seasonNumber), feat + "_" + str(args.model))
+
+	if args.model=="GAM":
+		try:
+			from Models.GAM import GAM
+			from rpy2.rinterface import RRuntimeError
+			gam = GAM(njobs=njobs, niter=iterations, verbosity=1)
+			if (feat == "OSM_land_use_distances"):
+				feat_columns = ["residential1100m", "distanceTrafficSignal", "distanceMotorway", "residential2000m",
+								"residential1950m", "residential1300m", "residential1850m", "industrial1850m",
+								"industrial2300m", "commercial2100m", "bigStreet100m", "bigStreet50m", "bigStreet200m",
+								"industrial2950m", "industrial2450m", "industrial1700m"]
+
+			try:
+				gam.test_model(data, feat_columns, target)
+			except RRuntimeError:
+				print("Too many features for data")
+		except Exception as e:
+			print(e)
+			print("Install newer R")
+
+
 	elif args.model=="AML":
 		model = AutoRegressor(njobs=njobs, features=feat + "_s{}".format(args.seasonNumber), niter=iterations, verbosity=2, time=args.time)
 		model.test_model(data, feat_columns, target)
@@ -104,67 +118,28 @@ if __name__ == '__main__':
 		result = model.test_model(data, feat_columns, target)
 		pickle.dump(result, open(paths.autosklearn + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
 	elif args.model=="SGD":
-		model = SGD(njobs=njobs, niter=iterations, verbosity=2)
+		model = SGD(njobs=njobs, name=outpath, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model=="RF":
-		model = RF(njobs=njobs, niter=iterations, verbosity=2)
+		model = RF(njobs=njobs, name=outpath, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model == "RF100":
-		model = RF100(njobs=njobs, niter=iterations, verbosity=2)
+		model = RF100(njobs=njobs, name=outpath, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model=="KNN":
-		model = KNN(njobs=njobs, niter=iterations, verbosity=2)
+		model = KNN(njobs=njobs, name=outpath, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model=="ADA":
-		model = Adaboost(njobs=njobs, niter=iterations, verbosity=2)
+		model = Adaboost(njobs=njobs, name=outpath, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model == "MLP":
-		model = MLP(njobs=njobs, niter=iterations, verbosity=2)
+		model = MLP(njobs=njobs, name=outpath, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 	elif args.model=="GWR":
-		if (feat=="OSM_land_use")|(feat=="OSM_land_use_distances"):
-			feat_columns = ["residential1100m", "residential1300m", "residential1850m", "residential1950m",
-			                "residential2000m", "industrial550m", "industrial1700m", "industrial1850m",
-			                "industrial2300m", "industrial2450m", "industrial2950m", "commercial2100m", "bigStreet100m",
-			                "bigStreet50m", "bigStreet200m", "distanceTrafficSignal", "distanceMotorway"]
+		if (feat=="OSM_land_use_distances"):
 			feat_columns = ["residential1100m", "distanceTrafficSignal", "distanceMotorway", "residential2000m", "residential1950m", "residential1300m", "residential1850m", "industrial1850m", "industrial2300m", "commercial2100m", "bigStreet100m", "bigStreet50m", "bigStreet200m", "industrial2950m", "industrial2450m", "industrial1700m"]
 		print(feat_columns)
-		model = GWR(njobs=njobs, niter=iterations, verbosity=2)
+		model = GWR(njobs=njobs, name=outpath, niter=iterations, verbosity=2)
 		model.test_model(data, feat_columns, target)
 
 
-
-	# Feature selection:
-	#if args.model==3:
-		#print("Install newer R")
-		#gam = GAM(njobs=njobs, niter=iterations, verbosity=0)
-
-		#final_features = []
-
-		#rmse_check = 10000
-		#rmse_old = 20000
-
-		#treshold = 50
-		#while (rmse_old-rmse_check > treshold):
-
-		#	rmse_features = []
-		#	for feature in feat_columns:
-		#		features = final_features[:]
-		#		features.append(feature)
-		#		print(features)
-		#		try:
-		#			rmse, r2, r2val = gam.test_model(data, features, target)
-		#		except:
-		#			break
-		#		rmse_features.append(rmse)
-
-		#	print(rmse_features)
-		#	ind = rmse_features.index(max(rmse_features))
-		#	final_features.append(feat_columns[ind])
-		#	feat_columns.pop(ind)
-		#	rmse_old = rmse_check
-		#	rmse_check, r2, r2val = gam.test_model(data, features, target)
-		#	print(rmse_check)
-		#	print(final_features)
-
-		#pickle.dump({'rmse':rmse_check, 'r2':r2, 'r2val':r2val, 'features':final_features, 'treshold':treshold, "rmse_old":rmse_old}, open(paths.featuresel + "season{}_Features_{}.p".format(args.seasonNumber, feat), 'wb'))
