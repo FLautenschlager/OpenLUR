@@ -1,12 +1,13 @@
+import argparse
 import csv
 import sys
-import argparse
-import scipy.io as sio
 import time
 
-import paths
-from wgs84_ch1903 import *
-import Requestor
+import scipy.io as sio
+
+from OSM_featureExtraction import Requestor
+from utils import paths
+from utils.wgs84_ch1903 import *
 
 
 def create_features_from_SwissCoord(x, y):

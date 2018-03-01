@@ -1,5 +1,6 @@
 import psycopg2
-
+from operator import add
+import time
 
 class Requestor:
 
@@ -17,16 +18,23 @@ class Requestor:
 			additional_values.append(lat_query)
 			additional_values.append(radius)
 
-		query = query[:-2] + "FROM planet_osm_polygon WHERE {} = %s;".format(key)
+		query = query[:-2] + "FROM planet_osm_polygon WHERE ST_DWithin(geo, geography(ST_MakePoint(%s, %s)), %s) AND {} = %s;".format(key)
+		additional_values.append(lon_query)
+		additional_values.append(lat_query)
+		additional_values.append(max(radii))
 		additional_values.append(value)
+		#pre = time.time()
 		self.cur.execute(query, tuple(additional_values))
-		return list(self.cur.fetchone())
+		#print("Poly needed {}".format(time.time() - pre))
+		return [0 if v is None else v for v in self.cur.fetchone()]
 
 	def query_osm_line(self, lon_query, lat_query, radius, key, value):
+		#pre = time.time()
 		self.cur.execute(
-			"SELECT sum(ST_Length(ST_Intersection(geo, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%s, %s),4326)), %s)))) FROM planet_osm_line WHERE {} = %s;".format(
+			"SELECT sum(ST_Length(ST_Intersection(geo, ST_Buffer(geography(ST_SetSRID(ST_MakePoint(%s, %s),4326)), %s)))) FROM planet_osm_line WHERE ST_DWithin(geo, geography(ST_MakePoint(%s, %s)), %s) AND {} = %s;".format(
 				key),
-			(lon_query, lat_query, radius, value))
+			(lon_query, lat_query, radius, lon_query, lat_query, radius, value))
+		#print("Poly needed {}".format(time.time() - pre))
 		return self.cur.fetchone()[0]
 
 	def query_osm_highway(self, lon_query, lat_query, radii):
@@ -39,11 +47,39 @@ class Requestor:
 			additional_values.append(lat_query)
 			additional_values.append(radius)
 
-		query = query[
-		        :-2] + "FROM planet_osm_line WHERE highway = 'motorway' OR highway = 'trunk' OR highway = 'primary' OR highway = 'secondary';"
+		query = query[:-2] + "FROM planet_osm_line WHERE ST_DWithin(geo, geography(ST_MakePoint(%s, %s)), %s)"
+		additional_values.append(lon_query)
+		additional_values.append(lat_query)
+		additional_values.append(max(radii))
 
-		self.cur.execute(query, tuple(additional_values))
-		return list(self.cur.fetchone())
+		qmotor = query + " AND highway = 'motorway';"
+		qtrunk = query + " AND highway = 'trunk';"
+		qprimary = query + " AND highway = 'primary';"
+		qsecondary = query + " AND highway = 'secondary';"
+
+		#pre = time.time()
+		self.cur.execute(qmotor, tuple(additional_values))
+		motor = [0 if v is None else v for v in self.cur.fetchone()]
+		#print("Motorquery needed {}".format(time.time()-pre))
+
+		#pre = time.time()
+		self.cur.execute(qtrunk, tuple(additional_values))
+		trunk = [0 if v is None else v for v in self.cur.fetchone()]
+		#trunk = list(self.cur.fetchone())
+		#print("TRUNK needed {}".format(time.time() - pre))
+
+		#pre = time.time()
+		self.cur.execute(qprimary, tuple(additional_values))
+		primary = [0 if v is None else v for v in self.cur.fetchone()]
+		#print("PRIM needed {}".format(time.time() - pre))
+
+		#pre = time.time()
+		self.cur.execute(qsecondary, tuple(additional_values))
+		secondary = [0 if v is None else v for v in self.cur.fetchone()]
+		#print("SEC needed {}".format(time.time() - pre))
+
+
+		return list(map(add, map(add, motor, trunk), map(add, primary, secondary)))
 
 	def query_osm_local_road(self, lon_query, lat_query, radii):
 		query = "SELECT "
@@ -55,30 +91,51 @@ class Requestor:
 			additional_values.append(lat_query)
 			additional_values.append(radius)
 
-		query = query[:-2] + "FROM planet_osm_line WHERE highway = 'tertiary' OR highway = 'residential';"
+		query = query[:-2] + "FROM planet_osm_line WHERE ST_DWithin(geo, geography(ST_MakePoint(%s, %s)), %s) "
+		additional_values.append(lon_query)
+		additional_values.append(lat_query)
+		additional_values.append(max(radii))
+		query_tert = query + " AND highway = 'tertiary';"
+		query_res = query + " AND highway = 'residential';"
 
-		self.cur.execute(query, tuple(additional_values))
-		return list(self.cur.fetchone())
+		#pre = time.time()
+		self.cur.execute(query_tert, tuple(additional_values))
+		tert = [0 if v is None else v for v in self.cur.fetchone()]
+		#print("TERT needed {}".format(time.time() - pre))
+
+		#pre = time.time()
+		self.cur.execute(query_res, tuple(additional_values))
+		res = [0 if v is None else v for v in self.cur.fetchone()]
+		#print("RES needed {}".format(time.time() - pre))
+		#print(query_res)
+
+		return list(map(add, res,tert))
 
 	def query_osm_line_distance(self, lon_query, lat_query, key, value):
 		query = "SELECT min(ST_Distance(geo, geography(ST_SetSRID(ST_MakePoint(%s,%s),4326)))) FROM planet_osm_line WHERE {} = %s;".format(
 			key)
 
+		#pre = time.time()
 		self.cur.execute(query, (lon_query, lat_query, value))
+		#print("DistLine needed {}".format(time.time() - pre))
 		return self.cur.fetchone()
 
 	def query_osm_point_distance(self, lon_query, lat_query, key, value):
 		query = "SELECT min(ST_Distance(geo, geography(ST_SetSRID(ST_MakePoint(%s,%s),4326)))) FROM planet_osm_point WHERE {} = %s;".format(
 			key)
 
+		#pre = time.time()
 		self.cur.execute(query, (lon_query, lat_query, value))
+		#print("DistPoint needed {}".format(time.time() - pre))
 		return self.cur.fetchone()
 
 	def query_osm_polygon_distance(self, lon_query, lat_query, key, value):
 		query = "SELECT min(ST_Distance(geo, geography(ST_SetSRID(ST_MakePoint(%s,%s),4326)))) FROM planet_osm_polygon WHERE {} = %s;".format(
 			key)
 
+		#pre = time.time()
 		self.cur.execute(query, (lon_query, lat_query, value))
+		#print("DistPoly needed {}".format(time.time() - pre))
 		return self.cur.fetchone()
 
 	def create_features(self, lon, lat):

@@ -1,9 +1,11 @@
-import paths
 from os.path import join
+
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 import scipy.io as sio
+
+from utils import paths
 
 # Load necessary files
 # data = sio.loadmat(join(paths.filtereddatadir, 'pm_01042012_30062012_filtered.mat'))['data']

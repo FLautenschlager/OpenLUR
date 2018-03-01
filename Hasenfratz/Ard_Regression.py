@@ -8,9 +8,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.model_selection import KFold
 
-import paths
+from utils import paths
 import numpy as np
-import pickle
 import scipy.io as sio
 
 

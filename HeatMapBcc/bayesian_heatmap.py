@@ -4,7 +4,7 @@ sys.path.append("/home/florian/Code/code-2017-land-use/")
 #sys.path.append("/home/florian/Code/code-2017-land-use/HeatMapBcc/HeatMapBCC/python")
 
 import csv
-import paths
+from utils import paths
 import scipy.io as sio
 #from HeatMapBcc.HeatMapBCC.python.heatmapbcc import HeatMapBCC
 from HeatMapBCC.python import heatmapbcc

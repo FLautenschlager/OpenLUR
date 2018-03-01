@@ -1,11 +1,10 @@
-import autosklearn.regression
-import sklearn.model_selection
-import sklearn.metrics
-import paths
 import csv
-import numpy as np
 import pickle
 
+import autosklearn.regression
+import numpy as np
+
+from utils import paths
 
 if __name__ == "__main__":
 

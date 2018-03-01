@@ -1,10 +1,10 @@
-import csv
 import argparse
+import csv
 import time
 
-import paths
 from APIC.local_coordinates import *
-import Requestor
+from OSM_featureExtraction import Requestor
+from utils import paths
 
 
 def create_features_from_localCoord(x, y):

@@ -1,18 +1,17 @@
-from sklearn.preprocessing import PolynomialFeatures, Imputer, Normalizer
-from sklearn.ensemble import AdaBoostRegressor
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
-from sklearn.model_selection import KFold
-
-import numpy as np
 import argparse
 import csv
 import re
-
-import paths
-import LUR_osm.Saver as Saver
-import pandas as pd
 from os.path import join
+
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import AdaBoostRegressor
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+from sklearn.model_selection import KFold
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import PolynomialFeatures, Imputer, Normalizer
+
+from utils import paths
 
 
 def cross_validation(X_t, y_t):

@@ -2,8 +2,8 @@ import csv
 
 import psycopg2
 
-import paths
-from wgs84_ch1903 import *
+from utils import paths
+from utils.wgs84_ch1903 import *
 
 conn = psycopg2.connect(dbname="zurich")
 cur = conn.cursor()
