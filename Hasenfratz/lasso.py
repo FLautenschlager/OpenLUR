@@ -23,7 +23,7 @@ from utils import load_input_file, write_results_file, paths
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(
-    paths.extdatadir, 'pm_01072012_31092012_filtered_ha_200.csv')
+    paths.extdatadir, 'pm_01012013_31032013_filtered_ha_200.csv')
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
 RESULTS_FILE_NAME = 'lasso_output.csv'
@@ -53,7 +53,8 @@ def cross_validation(X_t, y_t):
                   selection='cyclic')
 
         pipe = Pipeline([('Imputer', im), ('Scaler', mm),
-                         ('Polynomial', p), ('Regressor', r)])
+                        #  ('Polynomial', p),
+                         ('Regressor', r)])
 
         pipe.fit(X_train, y_train)
 
@@ -64,8 +65,8 @@ def cross_validation(X_t, y_t):
         rsq.append(r2_score(y_test, pred))
         mae_train.append(mean_absolute_error(y_train, pred_train))
         mae.append(mean_absolute_error(y_test, pred))
-        rmse_train.append(mean_squared_error(y_train, pred_train))
-        rmse.append(mean_squared_error(y_test, pred))
+        rmse_train.append(np.sqrt(mean_squared_error(y_train, pred_train)))
+        rmse.append(np.sqrt(mean_squared_error(y_test, pred)))
 
     # print("R2-score on training folds = " + score_train)
     # print("R2-score on test folds = " + score)

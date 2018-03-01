@@ -51,8 +51,8 @@ def cross_validation(X_t, y_t):
         rsq.append(r2_score(y_test, pred))
         mae_train.append(mean_absolute_error(y_train, pred_train))
         mae.append(mean_absolute_error(y_test, pred))
-        rmse_train.append(mean_squared_error(y_train, pred_train))
-        rmse.append(mean_squared_error(y_test, pred))
+        rmse_train.append(np.sqrt(mean_squared_error(y_train, pred_train)))
+        rmse.append(np.sqrt(mean_squared_error(y_test, pred)))
 
     # print("R2-score on training folds = " + score_train)
     # print("R2-score on test folds = " + score)
