@@ -17,15 +17,15 @@ import time
 
 
 # Auxiliary variables
-SQUARE_GEOMETRY = 'geography(ST_Transform(ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%s, %s), ST_MakePoint(%s, %s)),21781),4326))'
-POINT_GEOMETRY = 'geography(ST_Transform(ST_SetSRID(ST_MakePoint(%s, %s),21781),4326))'
+SQUARE_GEOMETRY = "geography(ST_Transform(ST_SetSRID(ST_MakeBox2D(ST_MakePoint(%s, %s), ST_MakePoint(%s, %s)),21781),4326))"
+POINT_GEOMETRY = "geography(ST_Transform(ST_SetSRID(ST_MakePoint(%s, %s),21781),4326))"
 
 
 class Requestor:
 
-    def __init__(self, database):
+    def __init__(self):
         self.conn = psycopg2.connect(
-            dbname=database, user='postgres', password='themoreyouknow', host='localhost', port=5433)
+            dbname='osm', user='postgres', password='themoreyouknow', host='localhost', port=5433)
         self.cur = self.conn.cursor()
 
     def query_osm_polygon(self, y_query, x_query, lengths, key, value):
@@ -35,18 +35,18 @@ class Requestor:
         additional_values = []
         for length in lengths:
             query = query + basic_query + " , "
-            additional_values.append(y_query)
-            additional_values.append(x_query)
-            additional_values.append(y_query + length)
-            additional_values.append(x_query + length)
+            additional_values.append(y_query - length / 2)
+            additional_values.append(x_query - length / 2)
+            additional_values.append(y_query + length / 2)
+            additional_values.append(x_query + length / 2)
 
         query = query[:-2] + \
-            "FROM planet_osm_polygon WHERE ST_DWithin(geo, {}, %s) AND {} = %s;".format(
+            """FROM planet_osm_polygon WHERE ST_DWithin(geo, {}, %s) AND "{}" = %s;""".format(
                 POINT_GEOMETRY, key)
-        additional_values.append(y_query + max(lengths) / 2)
-        additional_values.append(x_query + max(lengths) / 2)
+        additional_values.append(y_query)
+        additional_values.append(x_query)
         # Distance to the corner of the square plus a meter for good measure
-        additional_values.append(math.sqrt(2 * max(lengths) ** 2) + 1)
+        additional_values.append(math.hypot(max(lengths)/2, max(lengths)/2) + 1)#math.sqrt(2 * (max(lengths) ** 2)) + 1)
         additional_values.append(value)
         #pre = time.time()
         self.cur.execute(query, tuple(additional_values))
@@ -60,17 +60,17 @@ class Requestor:
         additional_values = []
         for length in lengths:
             query = query + basic_query + " , "
-            additional_values.append(y_query)
-            additional_values.append(x_query)
-            additional_values.append(y_query + length)
-            additional_values.append(x_query + length)
+            additional_values.append(y_query - length / 2)
+            additional_values.append(x_query - length / 2)
+            additional_values.append(y_query + length / 2)
+            additional_values.append(x_query + length / 2)
 
         query = query[:-2] + \
             "FROM planet_osm_line WHERE ST_DWithin(geo, {}, %s)".format(
                 POINT_GEOMETRY)
-        additional_values.append(y_query + max(lengths) / 2)
-        additional_values.append(x_query + max(lengths) / 2)
-        additional_values.append(math.sqrt(2 * max(lengths) ** 2) + 1)
+        additional_values.append(y_query)
+        additional_values.append(x_query)
+        additional_values.append(math.hypot(max(lengths)/2, max(lengths)/2) + 1)#math.sqrt(2 * max(lengths) ** 2) + 1)
 
         queries = {
             "motor": query + " AND highway = 'motorway';",
@@ -94,6 +94,28 @@ class Requestor:
 
         return results
 
+
+
+    def query_osm_largest_road_type(self, y_query, x_query, lengths):
+        road_lengths = self.query_osm_highway(y_query, x_query, lengths)
+
+        road_type_hierarchy = ["motor", "trunk", "primary", "secondary", "tertiary", "unclassified", "residential"]
+
+        # Return 7 when no road exists
+        results = [7] * len(lengths)
+
+        for l_ind in range(len(lengths)):
+            for rt_ind, rt in enumerate(road_type_hierarchy):
+                # Return the index of the largest road type that exists
+                # Note: larger roads have lower indices (0 = largest road type)
+                if (road_lengths[rt][l_ind] > 0.0):
+                    results[l_ind] = rt_ind
+                    # Stop for this length since we found the largest road
+                    break
+
+        return results
+
+
     def query_osm_line_distance(self, y_query, x_query, key, value):
         query = "SELECT min(ST_Distance(geo, {})) FROM planet_osm_line WHERE {} = %s;".format(POINT_GEOMETRY,
                                                                                               key)
@@ -103,10 +125,19 @@ class Requestor:
         #print("DistLine needed {}".format(time.time() - pre))
         return self.cur.fetchone()
 
+    def query_osm_large_road_distance(self, y_query, x_query):
+        query = "SELECT min(ST_Distance(geo, {})) FROM planet_osm_line WHERE highway = 'motorway' OR highway = 'trunk' OR highway = 'primary' OR highway = 'secondary';".format(POINT_GEOMETRY)
+
+        #pre = time.time()
+        self.cur.execute(query, (y_query, x_query))
+        #print("DistLine needed {}".format(time.time() - pre))
+        return self.cur.fetchone()
+
     def query_osm_elevation(self, y_query, x_query, max_ele=900, min_ele=200):
         """Find closest elevation point. Note: results in crap in zurich"""
         # query = "SELECT ele FROM planet_osm_point WHERE ele IS NOT NULL AND min(ST_Distance(geo, {}));".format(POINT_GEOMETRY)
-        query = "SELECT min(ST_Distance(geo, {})), ele FROM planet_osm_point WHERE ele IS NOT NULL GROUP BY ele;".format(POINT_GEOMETRY)
+        query = "SELECT min(ST_Distance(geo, {})), ele FROM planet_osm_point WHERE ele IS NOT NULL GROUP BY ele;".format(
+            POINT_GEOMETRY)
 
         #pre = time.time()
         self.cur.execute(query, (y_query, x_query))
@@ -129,60 +160,41 @@ class Requestor:
             if result > max_ele or result < min_ele:
                 result = None
 
-
         return result
 
-    def create_features(self, lon, lat):
+    def create_features(self, y, x):
         features = []
         try:
-            features.extend(list(self.query_osm_polygon(
-                lon, lat, list(range(50, 3050, 50)), "landuse", "commercial")))
-            features.extend(list(self.query_osm_polygon(
-                lon, lat, list(range(50, 3050, 50)), "landuse", "industrial")))
-            features.extend(
-                list(self.query_osm_polygon(lon, lat, list(range(50, 3050, 50)), "landuse", "residential")))
+            # features.extend(list(self.query_osm_polygon(
+            #     y, x, [100, 200], "landuse", "commercial")))
+            # features.extend(list(self.query_osm_polygon(
+            #     y, x, [100, 200], "landuse", "industrial")))
+            # features.extend(list(self.query_osm_polygon(
+            #     y, x, [100, 200], "landuse", "residential")))
+            # features.extend(list(self.query_osm_polygon(
+            #     y, x, [100, 200], "leisure", "park")))
+            # features.extend(list(self.query_osm_polygon(
+            #     y, x, [100, 200], "landuse", "grass")))
+            # features.extend(list(self.query_osm_polygon(
+            #     y, x, [100, 200], "natural", "water")))
 
-            features.extend(self.query_osm_highway(
-                lon, lat, list(range(50, 1550, 50))))
-            features.extend(self.query_osm_local_road(
-                lon, lat, list(range(50, 1550, 50))))
+            features.extend(self.query_osm_largest_road_type(
+                y, x, [100, 200, 300]))
+            
+            # features.extend(list(self.query_osm_large_road_distance(y, x)))
+            features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'motorway')))
+            features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'trunk')))
+            features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'primary')))
+            features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'secondary')))
+            features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'tertiary')))
+            # features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'unclassified')))
+            # features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'residential')))
 
         except Exception as e:
             print(e)
             print("error")
-            print(lon, lat)
-            features.extend([0 for _ in range(240)])
-
-        return features
-
-    def create_features_withDist(self, lon, lat):
-        features = []
-        try:
-            features.extend(list(self.query_osm_polygon(
-                lon, lat, list(range(50, 3050, 50)), "landuse", "commercial")))
-            features.extend(list(self.query_osm_polygon(
-                lon, lat, list(range(50, 3050, 50)), "landuse", "industrial")))
-            features.extend(
-                list(self.query_osm_polygone(lon, lat, list(range(50, 3050, 50)), "landuse", "residential")))
-
-            features.extend(self.query_osm_highway(
-                lon, lat, list(range(50, 1550, 50))))
-            features.extend(self.query_osm_local_road(
-                lon, lat, list(range(50, 1550, 50))))
-
-            features.extend(self.query_osm_point_distance(
-                lon, lat, 'highway', 'traffic_signals'))
-            features.extend(self.query_osm_line_distance(
-                lon, lat, 'highway', 'motorway'))
-            features.extend(self.query_osm_line_distance(
-                lon, lat, 'highway', 'primary'))
-            features.extend(self.query_osm_polygon_distance(
-                lon, lat, 'landuse', 'industrial'))
-        except Exception as e:
-            print(e)
-            print("error")
-            print(lon, lat)
-            features.extend([0 for _ in range(244)])
+            print(y, x)
+            features.extend([0 for _ in range(8)])
 
         return features
 
