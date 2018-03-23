@@ -47,7 +47,7 @@ def cross_validation(X_t, y_t):
         p = PolynomialFeatures(
             degree=3, interaction_only=False, include_bias=True)
 
-        r = RandomForestRegressor(n=100)
+        r = RandomForestRegressor(n_estimators=100)
 
         pipe = Pipeline([('Imputer', im), ('Scaler', mm),
                         #  ('Polynomial', p),

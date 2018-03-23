@@ -117,11 +117,14 @@ class Requestor:
 
 
     def query_osm_line_distance(self, y_query, x_query, key, value):
-        query = "SELECT min(ST_Distance(geo, {})) FROM planet_osm_line WHERE {} = %s;".format(POINT_GEOMETRY,
+        # I just look for distance to lines closer than 9 km to speed queries up
+        # dramatically. In zurich each roadtype is at most 8223 m away from each
+        # point so it's fine for my use case.
+        query = "SELECT min(ST_Distance(geo, {})) FROM planet_osm_line WHERE ST_DWITHIN(geo, {}, 9000) AND {} = %s;".format(POINT_GEOMETRY, POINT_GEOMETRY,
                                                                                               key)
 
         #pre = time.time()
-        self.cur.execute(query, (y_query, x_query, value))
+        self.cur.execute(query, (y_query, x_query, y_query, x_query, value))
         #print("DistLine needed {}".format(time.time() - pre))
         return self.cur.fetchone()
 
