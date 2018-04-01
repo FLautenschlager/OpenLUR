@@ -35,6 +35,17 @@ FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
 RESULTS_FILE_NAME = 'gam_output.csv'
 
+def is_in(train_cell, test_data):
+    """Test whether a train_cell overlaps with any cell in the test data"""
+    train_y = train_cell['y']
+    train_x = train_cell['x']
+    for cell in test_data.itertuples():
+        test_y = cell.y
+        test_x = cell.x
+        if train_y >= test_y - 100 and train_y <= test_y + 100 and train_x >= test_x - 100 and train_x <= test_x + 100:
+            return True
+
+    return False
 
 def build_formula_string(feature_cols):
     """ Build formula for GAM depending on which features are used """
@@ -148,10 +159,18 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
     # Hasenfratz does the 10 fold cross validation 40 times to get a better coverage
     # of the model variables
     for _ in range(repeat):
-        for train_index_calib, test_index_calib in kf.split(calib_data):
+
+        # Get the original unshifted grid and split the CV based on this
+        og_grid_data = calib_data[(calib_data['y'] % 100 == 0) & (calib_data['x'] % 100 == 0)]
+
+        for train_index_calib, test_index_calib in kf.split(og_grid_data):
+        # for train_index_calib, test_index_calib in kf.split(calib_data):
             train_calib_data = calib_data.iloc[train_index_calib]
             test_calib_data = calib_data.iloc[test_index_calib]
 
+            # Gather all cells that do not overlap with a test cell for training 
+            train_calib_data = calib_data[calib_data.apply(lambda c: not is_in(c, test_calib_data), axis=1)]
+            
             # Select test data from model_var (data NOT used for calibration)
             # Do this by finding all rows in model_var whose x and y coordinates are not
             # in train_calib_data
