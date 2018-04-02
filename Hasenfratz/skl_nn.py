@@ -1,5 +1,5 @@
 """
-Land-use regression with mean. This is meant to be used as a baseline.
+Land-use regression with Neural Network from SKLearn.
 """
 
 import sys
@@ -11,7 +11,9 @@ import argparse
 import ast
 import re
 
-from sklearn.dummy import DummyRegressor
+from sklearn.neural_network import MLPRegressor
+from sklearn.preprocessing import PolynomialFeatures, Imputer, StandardScaler
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.model_selection import KFold
 
@@ -25,8 +27,12 @@ INPUT_FILE_PATH = join(
     paths.extdatadir, 'pm_01072012_31092012_filtered_ha_200.csv')
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
-RESULTS_FILE_NAME = 'mean_output.csv'
+RESULTS_FILE_NAME = 'skl_nn_output.csv'
 
+HIDDEN_SIZE = 4
+L2_SCALE = 0.000001
+LEARNING_RATE = 0.1
+STEPS = 4000
 
 def cross_validation(X_t, y_t):
     kf = KFold(n_splits=10, shuffle=True)
@@ -41,12 +47,16 @@ def cross_validation(X_t, y_t):
         X_train, y_train = X_t[train, :], y_t[train]
         X_test, y_test = X_t[test, :], y_t[test]
 
-        r = DummyRegressor(strategy='mean', constant=None, quantile=None)
+        sc = StandardScaler()
+        r = MLPRegressor(hidden_layer_sizes=(HIDDEN_SIZE, ), activation='relu', solver='adam', alpha=L2_SCALE, batch_size='auto', learning_rate='constant', learning_rate_init=LEARNING_RATE, power_t=0.5, max_iter=STEPS, shuffle=True, random_state=None, tol=0.0001, verbose=False, warm_start=False, momentum=0.9, nesterovs_momentum=True, early_stopping=False, validation_fraction=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 
-        r.fit(X_train, y_train)
+        pipe = Pipeline([('Scaler', sc),
+                         ('Regressor', r)])
+                         
+        pipe.fit(X_train, y_train)
 
-        pred = r.predict(X_test)
-        pred_train = r.predict(X_train)
+        pred = pipe.predict(X_test)
+        pred_train = pipe.predict(X_train)
 
         rsq_train.append(r2_score(y_train, pred_train))
         rsq.append(r2_score(y_test, pred))
@@ -99,8 +109,12 @@ if __name__ == "__main__":
     timeframe = tf_pattern.search(basename(args.input_file_path)).group(0)
 
     run_info = {
-        'source': 'mean',
+        'source': 'skl_nn',
         'feature_cols': args.feature_cols,
+        'hidden_size': HIDDEN_SIZE,
+        'learning_rate': LEARNING_RATE,
+        'l2_scale': L2_SCALE,
+        'steps': STEPS,
         'tiles': len(data),
         'timeframe': timeframe
     }
