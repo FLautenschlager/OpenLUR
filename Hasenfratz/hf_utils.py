@@ -79,3 +79,16 @@ def write_results_file(output_file_path, results):
 
     else:
         print('Invalid file extension: ', file_extension)
+
+def is_in(train_cell, test_data):
+    """Test whether a train_cell overlaps with any cell in the test data"""
+    train_y = train_cell['y']
+    train_x = train_cell['x']
+    for cell in test_data.itertuples():
+        test_y = cell.y
+        test_x = cell.x
+        if train_y >= test_y - 100 and train_y <= test_y + 100 and train_x >= test_x - 100 and train_x <= test_x + 100:
+            return True
+
+    return False
+    

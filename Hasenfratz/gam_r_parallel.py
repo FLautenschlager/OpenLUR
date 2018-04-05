@@ -25,7 +25,7 @@ from rpy2.robjects.packages import importr
 from rpy2.rinterface import RRuntimeError
 
 from utils import paths
-from hf_utils import load_input_file, write_results_file
+from hf_utils import load_input_file, write_results_file, is_in
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(
@@ -34,18 +34,6 @@ MODEL_VAR_PATH = join(paths.rdir, 'model_ha_variables.mat')
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
 RESULTS_FILE_NAME = 'gam_output.csv'
-
-def is_in(train_cell, test_data):
-    """Test whether a train_cell overlaps with any cell in the test data"""
-    train_y = train_cell['y']
-    train_x = train_cell['x']
-    for cell in test_data.itertuples():
-        test_y = cell.y
-        test_x = cell.x
-        if train_y >= test_y - 100 and train_y <= test_y + 100 and train_x >= test_x - 100 and train_x <= test_x + 100:
-            return True
-
-    return False
 
 def build_formula_string(feature_cols):
     """ Build formula for GAM depending on which features are used """
