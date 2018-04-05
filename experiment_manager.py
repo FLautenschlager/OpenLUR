@@ -16,7 +16,7 @@ def start_process(job):
     print('Start:', job['regressor_path'],
           job['calib_file'], job['feature_cols'], job['interpolation_factor'])
     # Start a process for a single cross validation
-    if job['regressor_path'] == regressor_paths['gam'] or job['regressor_path'] == regressor_paths['nn']:
+    if job['regressor_path'] == regressor_paths['nn']:# or job['regressor_path'] == regressor_paths['gam']:
         # Only gam and nn accept model_vars
         subprocess.check_call(['python3', job['regressor_path'],
                             job['calib_file'], RESULTS_PATH,
