@@ -44,7 +44,7 @@ if __name__ == '__main__':
         # 'random_forest': join('Hasenfratz', 'rf.py'),
         # 'mean': join('Hasenfratz', 'mean.py'),
         # 'lasso': join('Hasenfratz', 'lasso.py'),
-        'nn': expanduser(join('/mnt', 'c', 'Users', 'DerGuteste', 'hg', 'environment-net', 'landuse_regression.py'))
+        'nn': join('..', 'environment-net', 'landuse_regression.py')
         # 'skl_nn': join('Hasenfratz', 'skl_nn.py')
     }
 
