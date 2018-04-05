@@ -21,7 +21,8 @@ def start_process(job):
         subprocess.check_call(['python3', job['regressor_path'],
                             job['calib_file'], RESULTS_PATH,
                             '-f', str(job['feature_cols']),
-                            '-mv', job['model_vars']])
+                            '-mv', str(job['model_vars']),
+                            '-i', str(job['interpolation_factor'])])
 
     else:
         subprocess.check_call(['python3', job['regressor_path'],
@@ -106,13 +107,13 @@ if __name__ == '__main__':
         '1.0': 1.0
     }
 
-    todo_index_tuples = [(source, timeframe)
+    todo_index_tuples = [(source, timeframe, interpolation_factor)
                          for source in regressor_paths
-                         for timeframe in calib_files]
-    # for interpolation_factor in interpolation_factors]
+                         for timeframe in calib_files#]
+                         for interpolation_factor in interpolation_factors]
 
     todo_index = pd.MultiIndex.from_tuples(
-        todo_index_tuples, names=['source', 'timeframe'])
+        todo_index_tuples, names=['source', 'timeframe', 'interpolation_factor'])
 
     todo = pd.Series(args.desired_runs, index=todo_index)
 
@@ -123,7 +124,7 @@ if __name__ == '__main__':
         # results_table = pd.read_csv(RESULTS_PATH)
         # print(results_table)
 
-        done = results_table.groupby(['source', 'timeframe']).size()
+        done = results_table.groupby(['source', 'timeframe', 'interpolation_factor']).size()
         todo = todo.subtract(done, fill_value=0).apply(int)
         todo = todo[todo > 0]
 
@@ -136,7 +137,7 @@ if __name__ == '__main__':
 
         reg_path = regressor_paths[ind[0]]
         calib_file = calib_files[ind[1]]
-        interpolation_factor = 0  # interpolation_factors[ind[2]]
+        interpolation_factor = interpolation_factors[ind[2]]
 
         # Queue as many jobs of this type as necessary
         for _ in range(runs_todo):
