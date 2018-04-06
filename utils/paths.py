@@ -14,4 +14,6 @@ bayesiandata = join(datadir, 'bayes', '')
 autosklearn = join(datadir, "autosklearn", '')
 featuresel = join(datadir, 'featureselection', '')
 
+osmdir = join(datadir, 'OSMData','')
+
 apicdir = expanduser(join('~', 'Data', 'APIC', ''))
