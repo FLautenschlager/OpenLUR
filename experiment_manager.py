@@ -8,7 +8,7 @@ from multiprocessing.dummy import Pool
 import argparse
 import pandas as pd
 
-RESULTS_PATH = expanduser(join('~', 'lur_results_interpolation.json'))
+RESULTS_PATH = expanduser(join('~', 'lur_results_netselect.json'))
 
 
 def start_process(job):
@@ -22,6 +22,7 @@ def start_process(job):
                             job['calib_file'], RESULTS_PATH,
                             '-f', str(job['feature_cols']),
                             '-mv', str(job['model_vars']),
+                            '-m', 'train_valid_test',
                             '-i', str(job['interpolation_factor'])])
 
     else:
@@ -100,11 +101,11 @@ if __name__ == '__main__':
                                  'R', 'model_ha_variables.mat'))
 
     interpolation_factors = {
-        '0': 0.00,
-        '0.25': 0.25,
-        '0.5': 0.5,
-        '0.75': 0.75,
-        '1.0': 1.0
+        '0': 0.00#,
+        # '0.25': 0.25,
+        # '0.5': 0.5,
+        # '0.75': 0.75,
+        # '1.0': 1.0
     }
 
     todo_index_tuples = [(source, timeframe, interpolation_factor)
