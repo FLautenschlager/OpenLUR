@@ -24,15 +24,16 @@ from rpy2.robjects import pandas2ri
 from rpy2.robjects.packages import importr
 from rpy2.rinterface import RRuntimeError
 
-from utils import load_input_file, write_results_file, paths
+from utils import paths
+from hf_utils import load_input_file, write_results_file, is_in
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(
     paths.extdatadir, 'pm_01072012_31092012_filtered_ha_200.csv')
+MODEL_VAR_PATH = join(paths.rdir, 'model_ha_variables.mat')
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
 RESULTS_FILE_NAME = 'gam_output.csv'
-
 
 def build_formula_string(feature_cols):
     """ Build formula for GAM depending on which features are used """
@@ -146,10 +147,18 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
     # Hasenfratz does the 10 fold cross validation 40 times to get a better coverage
     # of the model variables
     for _ in range(repeat):
-        for train_index_calib, test_index_calib in kf.split(calib_data):
+
+        # Get the original unshifted grid and split the CV based on this
+        og_grid_data = calib_data[(calib_data['y'] % 100 == 0) & (calib_data['x'] % 100 == 0)]
+
+        for train_index_calib, test_index_calib in kf.split(og_grid_data):
+        # for train_index_calib, test_index_calib in kf.split(calib_data):
             train_calib_data = calib_data.iloc[train_index_calib]
             test_calib_data = calib_data.iloc[test_index_calib]
 
+            # Gather all cells that do not overlap with a test cell for training 
+            train_calib_data = calib_data[calib_data.apply(lambda c: not is_in(c, test_calib_data), axis=1)]
+            
             # Select test data from model_var (data NOT used for calibration)
             # Do this by finding all rows in model_var whose x and y coordinates are not
             # in train_calib_data
@@ -264,6 +273,8 @@ if __name__ == '__main__':
                         nargs='?', default=INPUT_FILE_PATH)
     parser.add_argument('results_file', default=RESULTS_FILE_NAME, nargs='?',
                         help='File where to output the results')
+    parser.add_argument('-mv', '--model_vars', default=MODEL_VAR_PATH,
+                        help='Path to model variables')
     parser.add_argument('-f', '--feature_cols', default=FEATURE_COLS,
                         help='Feature columns to use for input')
     parser.add_argument('-j', '--jobs', default=cpu_count(), type=int,
@@ -280,10 +291,27 @@ if __name__ == '__main__':
     # Load data
     calib_data = load_input_file(args.input_file_path)
 
-    model_var = pd.DataFrame(sio.loadmat(
-	    paths.rdir + 'model_ha_variables.mat')['model_variables'])
-    model_var.columns = ['y', 'x', 'population', 'industry', 'floorlevel', 'heating', 'elevation', 'streetsize', 'signaldist',
-                         'streetdist', 'slope', 'expo', 'traffic', 'streetdist_m', 'streetdist_l', 'trafficdist_l', 'trafficdist_h', 'traffic_tot']
+    # Load model variables
+    model_var = None
+    if (args.model_vars.split('.')[-1] == 'mat'):
+        # Assume original hasenfratz features when .mat file is choosen
+        model_var = pd.DataFrame(sio.loadmat(
+            args.model_vars)['model_variables'])
+        model_var.columns = ['y', 'x', 'population', 'industry', 'floorlevel',
+                             'heating', 'elevation', 'streetsize', 'signaldist',
+                             'streetdist', 'slope', 'expo', 'traffic',
+                             'streetdist_m', 'streetdist_l', 'trafficdist_l',
+                             'trafficdist_h', 'traffic_tot']
+        model_var.set_index(['y', 'x'])
+
+    elif (args.model_vars.split('.')[-1] == 'csv'):
+        # Assume my own custom features when a csv file is provided
+        model_var = pd.read_csv(args.model_vars)
+        model_var.set_index(['y', 'x'])
+
+    else:
+        print('Unkown model vars file type', args.model_vars.split('.')[-1])
+
 
     # Parse timeframe from file name
     tf_pattern = re.compile('\d{8}_\d{8}')

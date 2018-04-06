@@ -1,5 +1,5 @@
 """
-Land-use regression with mean. This is meant to be used as a baseline.
+Land-use regression with RandomForest.
 """
 
 import sys
@@ -11,7 +11,9 @@ import argparse
 import ast
 import re
 
-from sklearn.dummy import DummyRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import PolynomialFeatures, Imputer, MinMaxScaler
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.model_selection import KFold
 
@@ -22,10 +24,10 @@ from hf_utils import load_input_file, write_results_file
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(
-    paths.extdatadir, 'pm_01072012_31092012_filtered_ha_200.csv')
+    paths.extdatadir, 'pm_01012013_31032013_filtered_ha_200.csv')
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
-RESULTS_FILE_NAME = 'mean_output.csv'
+RESULTS_FILE_NAME = 'random_forest_output.csv'
 
 
 def cross_validation(X_t, y_t):
@@ -41,12 +43,21 @@ def cross_validation(X_t, y_t):
         X_train, y_train = X_t[train, :], y_t[train]
         X_test, y_test = X_t[test, :], y_t[test]
 
-        r = DummyRegressor(strategy='mean', constant=None, quantile=None)
+        im = Imputer(strategy='most_frequent')
+        mm = MinMaxScaler()
+        p = PolynomialFeatures(
+            degree=3, interaction_only=False, include_bias=True)
 
-        r.fit(X_train, y_train)
+        r = RandomForestRegressor(n_estimators=100)
 
-        pred = r.predict(X_test)
-        pred_train = r.predict(X_train)
+        pipe = Pipeline([('Imputer', im), ('Scaler', mm),
+                        #  ('Polynomial', p),
+                         ('Regressor', r)])
+
+        pipe.fit(X_train, y_train)
+
+        pred = pipe.predict(X_test)
+        pred_train = pipe.predict(X_train)
 
         rsq_train.append(r2_score(y_train, pred_train))
         rsq.append(r2_score(y_test, pred))
@@ -99,7 +110,7 @@ if __name__ == "__main__":
     timeframe = tf_pattern.search(basename(args.input_file_path)).group(0)
 
     run_info = {
-        'source': 'mean',
+        'source': 'random_forest',
         'feature_cols': args.feature_cols,
         'tiles': len(data),
         'timeframe': timeframe
@@ -115,4 +126,3 @@ if __name__ == "__main__":
 
     # Write results to file
     write_results_file(args.results_file, results)
-    
