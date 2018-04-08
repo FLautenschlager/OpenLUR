@@ -22,7 +22,7 @@ def start_process(job):
                             job['calib_file'], RESULTS_PATH,
                             '-f', str(job['feature_cols']),
                             '-mv', str(job['model_vars']),
-                            '-m', 'kfold_valid',
+                            '-m', 'kfold',
                             '-i', str(job['interpolation_factor'])])
 
     else:
