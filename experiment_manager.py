@@ -8,7 +8,7 @@ from multiprocessing.dummy import Pool
 import argparse
 import pandas as pd
 
-RESULTS_PATH = expanduser(join('~', 'lur_results_netselect.json'))
+RESULTS_PATH = expanduser(join('~', 'lur_results_earlystop.json'))
 
 
 def start_process(job):
