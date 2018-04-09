@@ -15,7 +15,7 @@ RESULTS_PATH = expanduser(join('~', 'lur_results_autofeat.json'))
 def start_process(job):
     print('Curjob:', job)
     print('Start:', job['regressor_path'],
-          job['calib_file'], job['feature_cols'], job['interpolation_factor'])
+          job['calib_file'], job['feature_cols'])#, job['interpolation_factor'])
 
     # Start a process for a single cross validation
     if job['regressor_path'] == regressor_paths['nn']:
@@ -38,7 +38,7 @@ def start_process(job):
                                job['calib_file'], RESULTS_PATH,
                                '-f', str(job['feature_cols'])])
     print('End:', job['regressor_path'],
-          job['calib_file'], job['feature_cols'], job['interpolation_factor'])
+          job['calib_file'], job['feature_cols'])#, job['interpolation_factor'])
 
 
 if __name__ == '__main__':
