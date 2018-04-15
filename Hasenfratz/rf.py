@@ -24,7 +24,7 @@ from hf_utils import load_input_file, write_results_file
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(
-    paths.extdatadir, 'pm_01012013_31032013_filtered_ha_200.csv')
+    paths.extdatadir, 'pm_01042012_30062012_filtered_ha_200.csv')
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
 RESULTS_FILE_NAME = 'random_forest_output.csv'
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     parser.add_argument('-msl', '--min_samples_leaf', default=MIN_SAMPLES_LEAF,
                         type=int, help='Min number of data points allowed in ' +
                         'a leaf node')
-    parser.add_argument('-b', '--bootstrap', default=BOOTSTRAP, type=bool,
+    parser.add_argument('-b', '--bootstrap', default=BOOTSTRAP,
                         help='Sample data points with or without replacement')
 
     parser.add_argument('-en', '--experiment_number', default=0, type=int,
@@ -136,13 +136,15 @@ if __name__ == "__main__":
 
     try:
         args.max_features = int(args.max_features)
-    except ValueError:
+    except Exception:
         pass
 
     try:
         args.max_depth = int(args.max_depth)
-    except ValueError:
+    except Exception:
         pass
+
+    args.bootstrap = args.bootstrap == 'true' or args.bootstrap == 'True' or args.bootstrap == '1'
 
     data = load_input_file(args.input_file_path)
 
