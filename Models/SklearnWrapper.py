@@ -21,13 +21,15 @@ class SklearnWrapper:
 
 	def test_model(self, data, feat_columns, target):
 
-		kf = KFold(n_splits=10, shuffle=True)
+
 
 		# Hasenfratz does the 10 fold cross validation 40 times to get a better coverage
 		# of the model variables
 		inputs = []
 
 		for i in range(self.niter):
+
+			kf = KFold(n_splits=10, shuffle=True)
 
 			for train_index_calib, test_index_calib in kf.split(data):
 

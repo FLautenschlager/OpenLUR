@@ -15,14 +15,14 @@ class GAM_featureSelection:
 		final_features = []
 
 
-		rmse_check = 0
-		rmse_old = -1
+		r2_check = 0
+		r2_old = -1
 
 		treshold = 0.01
 
 		pool = Pool(processes=int(self.njobs))
 
-		while ( rmse_check - rmse_old) > treshold:
+		while ( r2_check - r2_old) > treshold:
 
 			inputs = []
 			for feature in feat_columns:
@@ -32,17 +32,21 @@ class GAM_featureSelection:
 				inputs.append((data, features, target))
 
 			result = pool.map(self.compute_single, inputs)
-			rmse_features, feats = list(zip(*result))
+			r2_features, rmse_features, feats = list(zip(*result))
 
-			ind = rmse_features.index(max(rmse_features))
+			r2_features_final = [np.mean(i) for i in r2_features]
+			rmse_features_final = [np.mean(i) for i in rmse_features]
+
+			ind = r2_features_final.index(max(r2_features_final))
 			final_features.append(feats[ind])
 			feat_columns.pop(feat_columns.index(feats[ind]))
-			rmse_old = rmse_check
-			rmse_check, _ = self.compute_single((data, final_features, target))
-			print(rmse_check)
+			r2_old = r2_check
+			r2_check = r2_features_final[ind]
+			rmse_check = rmse_features_final[ind]
+			print(r2_check)
 			print(final_features)
 
-		return final_features
+		return final_features, r2_check, rmse_check
 
 	def compute_single(self, input):
 
@@ -72,10 +76,12 @@ class GAM_featureSelection:
 		# Calculate Root-mean-square error model
 		rmse_model = results['rmse'].mean()
 		r2val = results['rsq'].mean()
+		list(r2 = results['rmse'].values)
+		list(rmse = results['rsq'].values)
 		#print(results['rsval'])
 		self.print('Root-mean-square error: {} particles/cm^3'.format(rmse_model))
 
-		return r2val, feat_columns[-1]
+		return r2, rmse, feat_columns[-1]
 
 	def print(self, message):
 		if self.verbosity > 0:

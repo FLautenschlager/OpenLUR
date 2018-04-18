@@ -6,8 +6,9 @@ from os.path import join, isfile, isdir
 
 import pandas as pd
 
-from Models.GAM import GAM
-from Models.GAM_featureSelection import GAM_featureSelection
+#from Models.GAM import GAM
+#from Models.GAM_featureSelection import GAM_featureSelection
+from Models.RF_featureSelection import RF_featureSelection
 from utils import paths
 
 if __name__ == '__main__':
@@ -89,12 +90,13 @@ if __name__ == '__main__':
 	makeIt = True
 
 	for i in range(iterations):
-		gam = GAM_featureSelection(njobs=njobs, verbosity=0)
-		final_features = gam.select_features(data, feat_columns[:], target)
-		gam = GAM(njobs=njobs, niter=iterations, verbosity=1)
-		rmse, r2 = gam.test_model(data, final_features, target)
+		selector = RF_featureSelection(njobs=njobs, verbosity=0)
+		final_features, r2, rmse, pvalues = selector.select_features(data, feat_columns[:], target)
+		#gam = GAM(njobs=njobs, niter=iterations, verbosity=1)
+		#rmse, r2 = gam.test_model(data, final_features, target)
 
-		pickle.dump({'rmse': rmse, 'r2': r2, 'features': final_features},
-		            open(join(dir, "{}.p".format(i)), 'wb'))
+		file = join(dir, "{}.p".format(i))
+		pickle.dump({'rmse': rmse, 'r2': r2, 'features': final_features, 'pvalues': pvalues},
+		            open(file, 'wb'))
 
-		print("Saved!")
+		print("Saved in file {}".format(file))
