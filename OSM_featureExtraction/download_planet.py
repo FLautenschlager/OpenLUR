@@ -21,6 +21,11 @@ def reporthook(count, block_size, total_size):
 
 def download(outfile):
     r.urlretrieve('https://ftp5.gwdg.de/pub/misc/openstreetmap/planet.openstreetmap.org/pbf/planet-latest.osm.pbf', outfile, reporthook)
+    return outfile
+
+def downloadBBox(outfile, latmin, latmax, lonmin, lonmax):
+    r.urlretrieve('https://overpass-api.de/api/map?bbox={},{},{},{}'.format(lonmin,latmin,lonmax,latmax), outfile, reporthook)
+    return outfile
 
 def main():
     outfile = paths.osmdir + 'planet-latest.osm.pbf'
@@ -30,7 +35,7 @@ def main():
         ans = input('Use it? (Y/n')
         if ans=='n':
             download()
-        elif (ans=='Y') || (ans==''):
+        elif (ans=='Y') | (ans==''):
             sys.exit(0)
         else:
             print('please give valid answer')
@@ -38,7 +43,7 @@ def main():
     else:
         download()
 
+    return outfile
+
 if __name__=='__main__':
     main()
-
-

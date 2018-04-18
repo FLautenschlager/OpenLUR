@@ -5,85 +5,98 @@ import sys
 import subprocess
 import argparse
 import psycopg2
+import time
+
+def checkDBexists(dbname):
+    try:
+        conn = psycopg2.connect("dbname=template1")
+    except:
+        print('I am unable to connect to the database.')
+
+    cur = conn.cursor()
+    cur.execute("""select exists(SELECT datname FROM pg_catalog.pg_database WHERE lower(datname) = lower('{}'));""".format(dbname))
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+    return result
 
 def crop(infile, outfile, latmin, latmax, lonmin, lonmax):
-    
-    print("Cropping OSM file")
-    process = subprocess.Popen(["osmconvert", infile, "-b={},{},{},{}".format(lonmin, latmin, lonmax, latmax), "-o={}".format(outfile)], stdout=subprocess.PIPE)
-    
-    while True:
-        output = process.stdout.readline()
-        if output == '' and process.poll() is not None:
-            break
-        if output:
-            print(output.strip())
-    rc = process.poll()
 
+    start = time.time()
+    print("Cropping OSM file")
+    process = subprocess.call(["osmconvert", infile, "-b={},{},{},{}".format(lonmin, latmin, lonmax, latmax), "-o={}".format(outfile)])
+    print("time needed: {} seconds.".format(time.time()-start))
 
 def loadDB(infile, dbname):
     print("Drop and create DB")
     try:
-        conn = psycopg2.connect("user='postgres'")
+        conn = psycopg2.connect("dbname=template1")
     except:
         print('I am unable to connect to the database.')
 
     cur = conn.cursor()
     conn.set_isolation_level(0)
-    try:
-        cur.execute("""DROP DATABASE IF EXISTS (%s);""", dbname)
-    except:
-        print('I cannot drop the database!')
-    cur.fetchall()
-    cur.execute("""CREATE DATABASE (%s);""", dbname)
-    cur.fetchall()
+
+    cur.execute("""DROP DATABASE IF EXISTS {};""".format(dbname))
+
+    #cur.fetchall()
+    cur.execute("""CREATE DATABASE {};""".format(dbname))
+    #cur.fetchall()
 
     cur.close()
     conn.close()
 
     print("Create extensions")
     try:
-        conn = psycopg2.connect("dbname='{}' user='postgres'".format(dbname))
+        conn_new = psycopg2.connect("dbname={}".format(dbname))
+        conn_new.autocommit = True
     except:
         print('I am unable to connect to the database {}.'.format(dbname))
 
-    cur = conn.cursor()
- 
-    cur.execute("""CREATE EXTENSION postgis; CREATE EXTENSION hstore;""")
-    cur.fetchall()
+    cur_new = conn_new.cursor()
+
+    print("create extensions")
+    cur_new.execute("CREATE EXTENSION postgis; CREATE EXTENSION hstore;")
+
 
     print("Load data to db")
-    process = subprocess.Popen(["osm2pgsql", "--create", "--database", dbname, "-C", "10000", infile], stdout=subprocess.PIPE)
-    
-    while True:
-        output = process.stdout.readline()
-        if output == '' and process.poll() is not None:
-            break
-        if output:
-            print(output.strip())
-    rc = process.poll()
+    process = subprocess.call(["osm2pgsql", "--create", "--database", dbname, "-C", "10000", infile])
 
     print("Creating indexes")
-    fd = open('table_geography_creation', 'r')
+    fd = open('OSM_featureExtraction/table_geography_creation.sql', 'r')
     sqlFile = fd.read()
     fd.close()
 
-    sqlCommands = sqlFile.split(';')
+    sqlCommands = sqlFile.split('\n')
     for command in sqlCommands:
-        try: 
-            cur.execute(command)
-        except OperationalError as msg:
-            print("Command skipped: ", msg)
+        if command:
+            #print(command)
+            try:
+                cur_new.execute(command)
+            except Exception as msg:
+                print(msg)
+                print("Command skipped: ", command)
 
-    cur.close()
-    conn.close()
+    print("Created Tables:")
+    table_name = ["planet_osm_polygon", "planet_osm_line", "planet_osm_point"]
+    for table in table_name:
+        cur_new.execute("SELECT COUNT(*) from {};".format(table))
+        print(table + ": {} rows".format(cur_new.fetchone()))
+
+    cur_new.close()
+    conn_new.close()
 
 
-def loadCrop(infile, dbname, latmin, latmax, lonmin, lonmax):
+def cropLoad(infile, dbname, latmin, latmax, lonmin, lonmax):
     outfile = paths.osmdir + '{}.osm.pbf'.format(dbname)
     crop(infile, outfile, latmin, latmax, lonmin, lonmax)
     loadDB(outfile, dbname)
 
-def main():
+def main(infile, dbname, latmin, latmax, lonmin, lonmax):
+    cropLoad(paths.osmdir + infile, dbname, latmin, latmax, lonmin, lonmax)
+
+
+if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('infile', type=str, help='.osm.pbf file with OSM data')
     parser.add_argument('dbname', type=str, help='name of the DB (cityname)')
@@ -93,10 +106,6 @@ def main():
     parser.add_argument('lonmax', type=float, help='maximum longitude')
 
     args = parser.parse_args()
-    
-    
-    loadCrop(paths.osmdir + args.infile, args.dbname, args.latmin, args.latmax, args.lonmin, args.lonmax)
-
-
-if __name__=='__main__':
-    main()
+    starttime = time.time()
+    main(args.infile, args.dbname.lower(), args.latmin, args.latmax, args.lonmin, args.lonmax)
+    print("total time used: {} seconds".format(time.time()-starttime))

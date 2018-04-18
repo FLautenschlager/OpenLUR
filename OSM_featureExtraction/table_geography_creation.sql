@@ -19,4 +19,3 @@ ALTER TABLE planet_osm_polygon ADD column geo geography;
 UPDATE planet_osm_polygon SET geo = geography(ST_Transform(way, 4326));
 CREATE INDEX landuse_poly_simple ON planet_osm_polygon USING gist(geo, landuse);
 VACUUM ANALYZE planet_osm_polygon;
-
