@@ -120,9 +120,13 @@ def main():
 
 	logger.info("Final score: RMSE: {:.2f}\tR2: {:.2f}".format(results.rmse.mean() / 1000, results.r2.mean()))
 
-	pickle.dump(results, open(join(
-		utils.paths.modeldatadir + join(str(args.seasonNumber), feat + "_RFOauto_{}s".format(args.time)) + ".p"),
-		"wb"))
+	f = join(utils.paths.modeldatadir + join(str(args.seasonNumber), feat + "_RFOauto_{}s".format(args.time)) + ".p")
+	if refit:
+		f = f + "_refit"
+
+	f = f + ".p"
+
+	pickle.dump(results, open(f, "wb"))
 
 
 if __name__ == "__main__":
