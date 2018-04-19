@@ -75,12 +75,22 @@ if __name__ == "__main__":
     print("Features generated in {} minutes!".format(
         (time.time() - start_time) / 60))
 
-    filenew = "mapfeatures_zurich_shift_{}_{}.csv".format(
+    filenew = "mapfeatures_zurich_complete_shift_{}_{}.csv".format(
         str(args.shift_y), str(args.shift_x))
 
     data_new = pd.DataFrame(data_new)
-    data_new.columns = ['y', 'x', 'roadtype_100', 'roadtype_200', 'roadtype_300', 'roaddist_motorway',
-                        'roaddist_trunk', 'roaddist_primary', 'roaddist_secondary', 'roaddist_tertiary']
+    data_new.columns = ['y', 'x', 'commercial_100', 'commercial_200',
+                        'commercial_300', 'industrial_100', 'industrial_200',
+                        'industrial_300', 'residential_100', 'residential_200',
+                        'residential_300', 'park_100', 'park_200', 'park_300',
+                        'grass_100', 'grass_200', 'grass_300',
+                        'water_100', 'water_200', 'water_300', 'roadtype_100',
+                        'roadtype_200', 'roadtype_300', 'roaddist_motorway',
+                        'roaddist_trunk', 'roaddist_primary',
+                        'roaddist_secondary', 'roaddist_tertiary',
+                        'roaddist_unclassified']
+    # data_new.columns = ['y', 'x', 'roadtype_100', 'roadtype_200', 'roadtype_300', 'roaddist_motorway',
+    #                     'roaddist_trunk', 'roaddist_primary', 'roaddist_secondary', 'roaddist_tertiary']
 
     data_new.to_csv(filenew, index=False)
 

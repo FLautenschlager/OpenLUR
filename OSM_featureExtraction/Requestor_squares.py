@@ -168,18 +168,18 @@ class Requestor:
     def create_features(self, y, x):
         features = []
         try:
-            # features.extend(list(self.query_osm_polygon(
-            #     y, x, [100, 200], "landuse", "commercial")))
-            # features.extend(list(self.query_osm_polygon(
-            #     y, x, [100, 200], "landuse", "industrial")))
-            # features.extend(list(self.query_osm_polygon(
-            #     y, x, [100, 200], "landuse", "residential")))
-            # features.extend(list(self.query_osm_polygon(
-            #     y, x, [100, 200], "leisure", "park")))
-            # features.extend(list(self.query_osm_polygon(
-            #     y, x, [100, 200], "landuse", "grass")))
-            # features.extend(list(self.query_osm_polygon(
-            #     y, x, [100, 200], "natural", "water")))
+            features.extend(list(self.query_osm_polygon(
+                y, x, [100, 200, 300], "landuse", "commercial")))
+            features.extend(list(self.query_osm_polygon(
+                y, x, [100, 200, 300], "landuse", "industrial")))
+            features.extend(list(self.query_osm_polygon(
+                y, x, [100, 200, 300], "landuse", "residential")))
+            features.extend(list(self.query_osm_polygon(
+                y, x, [100, 200, 300], "leisure", "park")))
+            features.extend(list(self.query_osm_polygon(
+                y, x, [100, 200, 300], "landuse", "grass")))
+            features.extend(list(self.query_osm_polygon(
+                y, x, [100, 200, 300], "natural", "water")))
 
             features.extend(self.query_osm_largest_road_type(
                 y, x, [100, 200, 300]))
@@ -190,14 +190,14 @@ class Requestor:
             features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'primary')))
             features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'secondary')))
             features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'tertiary')))
-            # features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'unclassified')))
-            # features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'residential')))
+            features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'unclassified')))
+            features.extend(list(self.query_osm_line_distance(y, x, 'highway', 'residential')))
 
         except Exception as e:
             print(e)
             print("error")
             print(y, x)
-            features.extend([0 for _ in range(8)])
+            features.extend([0 for _ in range(28)])
 
         return features
 
