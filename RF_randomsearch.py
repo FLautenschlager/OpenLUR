@@ -52,8 +52,6 @@ def randomSearchSingle(X_train, y_train, X_test, y_test):
 							   bootstrap=bootstrap)
 	rf.fit(X_train, y_train)
 
-	#logger.debug(rf.get_params())
-
 	return rf, np.sqrt(mean_squared_error(rf.predict(X_test), y_test))
 
 
@@ -87,8 +85,6 @@ def randomSearchFold(data):
 	if refit:
 		bestModel.fit(X_search, y_search)
 
-	logger.info(bestModel.get_params())
-
 	pred = bestModel.predict(X_test)
 	rmse = np.sqrt(mean_squared_error(y_test, pred))
 	rsq = r2_score(y_test, pred)
@@ -104,7 +100,7 @@ def main():
 	parser.add_argument("-n", "--seasonNumber", help="Number of season", type=int, default=1)
 	parser.add_argument("-f", "--features",
 					  help="Dataset to build model on: (1) OpenSense, (2) OSM, (3) OSM + distances", type=int, default=1)
-	parser.add_argument("-i", "--iterations", help="Number of iterations to mean on", type=int, default=1)
+	parser.add_argument("-i", "--iterations", help="Number of iterations to mean on", type=int, default=40)
 	parser.add_argument("-p", "--processes", help="Number of parallel processes", type=int, default=4)
 	parser.add_argument("-t", "--time", help="Give time for parametertuning of each fold in seconds", type=int, default=60)
 	parser.add_argument("-r", "--refit", help="determines, if the model should be refittet", action='store_true')
@@ -112,7 +108,6 @@ def main():
 	args = parser.parse_args()
 
 	refit = args.refit
-	refit = True
 
 	data, feat_columns, target, feat = loadData(args.seasonNumber, args.features)
 
