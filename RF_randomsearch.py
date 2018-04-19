@@ -85,6 +85,7 @@ def randomSearchFold(data):
 	if refit:
 		bestModel.fit(X_search, y_search)
 
+	logger.info(bestModel.get_params())
 	pred = bestModel.predict(X_test)
 	rmse = np.sqrt(mean_squared_error(y_test, pred))
 	rsq = r2_score(y_test, pred)
