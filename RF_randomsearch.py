@@ -11,7 +11,6 @@ from sklearn.model_selection import KFold, train_test_split
 
 from utils.DataLoader import loadData
 from utils.MyPool import MyPool as Pool
-from utils.color import Color
 import utils.paths
 
 from os.path import isdir, join
@@ -33,6 +32,9 @@ ch.setFormatter(formatter)
 # add ch to logger
 logger.addHandler(ch)
 
+
+global refit
+refit = False
 
 def randomSearchSingle(X_train, y_train, X_test, y_test):
 
@@ -78,11 +80,14 @@ def randomSearchFold(data):
 			bestModel = model
 			bestScore = score
 
+	if refit:
+		bestModel.fit(X_search, y_search)
+
 	pred = bestModel.predict(X_test)
 	rmse = np.sqrt(mean_squared_error(y_test, pred))
 	rsq = r2_score(y_test, pred)
 
-	logger.info("Fold score: RMSE: {f4.2}\tR2: {f4.2}".format(rmse/1000, rsq))
+	logger.info("Fold score: RMSE: {:.2f}\tR2: {:.2f}".format(rmse/1000, rsq))
 
 	return rmse, rsq
 
@@ -96,12 +101,13 @@ def main():
 	parser.add_argument("-i", "--iterations", help="Number of iterations to mean on", type=int, default=40)
 	parser.add_argument("-p", "--processes", help="Number of parallel processes", type=int, default=4)
 	parser.add_argument("-t", "--time", help="Give time for parametertuning of each fold in seconds", type=int, default=60)
+	parser.add_argument("-r", "--refit", help="determines, if the model should be refittet", action='store_true')
 
 	args = parser.parse_args()
 
-	data, feat_columns, target, feat = loadData(args.seasonNumber, args.features)
+	refit = args.refit
 
-	temppath = join('', 'tmp', 'randomsearch{}'.format(time.time()))
+	data, feat_columns, target, feat = loadData(args.seasonNumber, args.features)
 
 	inputs = []
 
@@ -120,7 +126,7 @@ def main():
 
 	results.columns = ['rmse', 'r2']
 
-	logger.info("Final score: RMSE: {f4.2}\tR2: {f4.2}".format(results.rmse.mean()/1000, results.r2.mean()))
+	logger.info("Final score: RMSE: {:.2f}\tR2: {:.2f}".format(results.rmse.mean()/1000, results.r2.mean()))
 
 	pickle.dump(results, open(join(utils.paths.modeldatadir + join(str(args.seasonNumber), feat + "_RFOptimized_{}s".format(args.time))+ ".p"), "wb"))
 
