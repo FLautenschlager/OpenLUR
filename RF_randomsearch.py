@@ -48,7 +48,7 @@ def randomSearchSingle(X_train, y_train, X_test, y_test):
 	rf = RandomForestRegressor(n_estimators=n_estimators,
 							   max_features=max_features,
 							   min_samples_leaf=min_samples_leaf,
-							   min_impurity_split=min_samples_split,
+							   min_samples_split=min_samples_split,
 							   bootstrap=bootstrap)
 	rf.fit(X_train, y_train)
 
