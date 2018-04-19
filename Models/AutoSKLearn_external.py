@@ -125,6 +125,7 @@ class AutoRegressor:
 		                              resampling_strategy_arguments={'train_size': 0.8})
 
 		automl.fit(X_train, y_train, metric=mse)
+		automl.refit(X_train, y_train)
 
 		pred = automl.predict(X_test)
 
