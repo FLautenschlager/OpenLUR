@@ -8,6 +8,7 @@ from autosklearn.metrics import mean_squared_error as mse
 from autosklearn.regression import AutoSklearnRegressor
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import KFold
+from scipy.stats import shapiro
 
 from utils import paths
 # from multiprocessing import Pool
@@ -26,6 +27,8 @@ class AutoRegressor:
 			mkdir(self.groundpath)
 		self.print(self.groundpath, 1)
 		self.time = time
+		self.out = paths.modeldatadir
+		self.name = "AutoMLRefit_{}s".format(self.time)
 
 	def test_model(self, data, feat_columns, target):
 
@@ -89,8 +92,13 @@ class AutoRegressor:
 		# Get R² from summary
 		rsq_model = np.mean(r2)
 
+		results = pd.DataFrame({'rmse':rmse, 'r2':r2})
+
 		self.print('Mean root-mean-square error: {} particles/cm^3'.format(rmse_model), 1)
 		self.print('Mean R2: {}'.format(rsq_model), 1)
+		self.print('The RMSE is normally distributed with W={}'.format(shapiro(results.rmse.values)[0]), 1)
+
+		pickle.dump(results, open(join(self.out + self.name + ".p"), "wb"))
 
 		return rmse_model, rsq_model, self.groundpath
 
