@@ -46,11 +46,13 @@ def randomSearchSingle(X_train, y_train, X_test, y_test):
 
 
 	rf = RandomForestRegressor(n_estimators=n_estimators,
-							   max_features=max_features,
-							   min_samples_leaf=min_samples_leaf,
-							   min_impurity_split=min_samples_split,
+							   #max_features=max_features,
+							   #min_samples_leaf=min_samples_leaf,
+							   #min_samples_split=min_samples_split,
 							   bootstrap=bootstrap)
 	rf.fit(X_train, y_train)
+
+	#logger.debug(rf.get_params())
 
 	return rf, np.sqrt(mean_squared_error(rf.predict(X_test), y_test))
 
@@ -72,10 +74,12 @@ def randomSearchFold(data):
 
 	bestModel = None
 	bestScore = 1000000
+	numModels = 0
 
 	while (time.time() - starttime) < maxtime:
 		model, score = randomSearchSingle(X_train, y_train, X_val, y_val)
 		logger.debug(str(score))
+		numModels += 1
 		if score < bestScore:
 			bestModel = model
 			bestScore = score
@@ -83,11 +87,13 @@ def randomSearchFold(data):
 	if refit:
 		bestModel.fit(X_search, y_search)
 
+	logger.info(bestModel.get_params())
+
 	pred = bestModel.predict(X_test)
 	rmse = np.sqrt(mean_squared_error(y_test, pred))
 	rsq = r2_score(y_test, pred)
 
-	logger.info("Fold score: RMSE: {:.2f}\tR2: {:.2f}".format(rmse/1000, rsq))
+	logger.info("Fold score: RMSE: {:.2f}\tR2: {:.2f}\tNumber of models: {}".format(rmse/1000, rsq, numModels))
 
 	return rmse, rsq
 
@@ -98,7 +104,7 @@ def main():
 	parser.add_argument("-n", "--seasonNumber", help="Number of season", type=int, default=1)
 	parser.add_argument("-f", "--features",
 					  help="Dataset to build model on: (1) OpenSense, (2) OSM, (3) OSM + distances", type=int, default=1)
-	parser.add_argument("-i", "--iterations", help="Number of iterations to mean on", type=int, default=40)
+	parser.add_argument("-i", "--iterations", help="Number of iterations to mean on", type=int, default=1)
 	parser.add_argument("-p", "--processes", help="Number of parallel processes", type=int, default=4)
 	parser.add_argument("-t", "--time", help="Give time for parametertuning of each fold in seconds", type=int, default=60)
 	parser.add_argument("-r", "--refit", help="determines, if the model should be refittet", action='store_true')
@@ -106,6 +112,7 @@ def main():
 	args = parser.parse_args()
 
 	refit = args.refit
+	refit = True
 
 	data, feat_columns, target, feat = loadData(args.seasonNumber, args.features)
 
@@ -126,7 +133,7 @@ def main():
 
 	results.columns = ['rmse', 'r2']
 
-	logger.info("Final score: RMSE: {:.2f}\tR2: {:.2f}".format(results.rmse.mean()/1000, results.r2.mean()))
+	print("Final score: RMSE: {:.2f}\tR2: {:.2f}".format(results.rmse.mean()/1000, results.r2.mean()))
 
 	f = join(utils.paths.modeldatadir + join(str(args.seasonNumber), feat + "_RFOptimized_{}s".format(args.time)))
 	if refit:
