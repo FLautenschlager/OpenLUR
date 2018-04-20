@@ -73,10 +73,11 @@ class AutoSKLearn:
 		)
 		automl.fit(X_train, y_train, dataset_name='LUR')
 		automl.fit_ensemble(y_train, task=REGRESSION, metric=mean_squared_error, dataset_name='LUR', ensemble_nbest=20, ensemble_size=20)
-		#predictions = automl.predict(X_train)
+		automl.refit(X_train, y_train)
+		predictions = automl.predict(X_train)
 
 		#print(automl.show_models())
-		#print("Accuracy score", np.sqrt(mean_squared_error(y_train, predictions)))
+		print("Accuracy score", np.sqrt(mean_squared_error(y_train, predictions)))
 		#print(automl)
 		models = automl.get_models_with_weights()
 		print(models[0][0])
