@@ -44,29 +44,30 @@ def write_results_file(output_file_path, results):
     
     results = pd.DataFrame(results, index=[0])
 
+    # The initial write has to write the column headers if the file doesn't
+    # exist yet
+    initial_write = not isfile(output_file_path)
 
     if file_extension == 'json':
 
-        # Read old results file if it exists
-        if isfile(output_file_path):
-            old_results = pd.read_json(output_file_path)
+        with open(output_file_path, 'w' if initial_write else 'r+') as f:
+            # Read old results file if it exist
+            if not initial_write:
+                old_results = pd.read_json(f)
 
-            # Combine old and new results (even if they have different columns)
-            results = pd.concat(
-                [old_results, results], axis=0, ignore_index=True)
+                # Combine old and new results (even if they have different columns)
+                results = pd.concat(
+                    [old_results, results], axis=0, ignore_index=True)
 
-        # Write combined results to file and retry indefinitely if it failed
-        while True:
-            try:
-                results.to_json(output_file_path)
-            except:
-                continue
-            break
+            # Write combined results to file and retry indefinitely if it failed
+            while True:
+                try:
+                    results.to_json(f)
+                except:
+                    continue
+                break
 
     elif file_extension == 'csv':
-        # The initial write has to write the column headers if the file doesn't
-        # exist yet
-        initial_write = not isfile(output_file_path)
 
         # Write result to file and retry indefinitely if it failed
         while True:
