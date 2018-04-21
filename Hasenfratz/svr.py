@@ -12,8 +12,10 @@ import ast
 import re
 
 from sklearn.svm import SVR
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.model_selection import KFold
+from sklearn.preprocessing import StandardScaler
 
 import numpy as np
 
@@ -27,8 +29,12 @@ FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
 RESULTS_FILE_NAME = 'svr_output.csv'
 
+GAMMA = 'auto'
+C = 1.0
+EPSILON = 0.1
 
-def cross_validation(X_t, y_t):
+
+def cross_validation(X_t, y_t, gamma, c, epsilon):
     kf = KFold(n_splits=10, shuffle=True)
     rsq = []
     rsq_train = []
@@ -41,14 +47,18 @@ def cross_validation(X_t, y_t):
         X_train, y_train = X_t[train, :], y_t[train]
         X_test, y_test = X_t[test, :], y_t[test]
 
-        r = SVR(kernel='rbf', degree=3, gamma='auto', coef0=0.0, tol=0.001,
-                C=1.0, epsilon=0.1, shrinking=True, cache_size=200,
+        sc = StandardScaler()
+
+        r = SVR(kernel='rbf', degree=3, gamma=gamma, coef0=0.0, tol=0.001,
+                C=c, epsilon=epsilon, shrinking=True, cache_size=200,
                 verbose=False, max_iter=-1)
 
-        r.fit(X_train, y_train)
+        pipe = Pipeline([('Scaler', sc), ('Regressor', r)])
 
-        pred = r.predict(X_test)
-        pred_train = r.predict(X_train)
+        pipe.fit(X_train, y_train)
+
+        pred = pipe.predict(X_test)
+        pred_train = pipe.predict(X_train)
 
         rsq_train.append(r2_score(y_train, pred_train))
         rsq.append(r2_score(y_test, pred))
@@ -79,6 +89,16 @@ if __name__ == "__main__":
                         help='File where to output the results')
     parser.add_argument('-f', '--feature_cols', default=FEATURE_COLS,
                         help='Feature columns to use for input')
+    # Hyperparameters
+    parser.add_argument('-g', '--gamma', default=GAMMA,
+                        help='Kernel coefficient')
+    parser.add_argument('-c', default=C, type=float,
+                        help='Penalty parameter C of the error term')
+    parser.add_argument('-e', '--epsilon', default=EPSILON, type=float,
+                        help='Specifies the epsilon-tube')
+
+    parser.add_argument('-en', '--experiment_number', default=0, type=int,
+                        help='Experiment number')
     args = parser.parse_args()
 
     # Convert feature cols string to list
@@ -87,6 +107,11 @@ if __name__ == "__main__":
 
     if not isinstance(args.feature_cols, list):
         print('feature_cols is not a valid list')
+        
+    try:
+        args.gamma = float(args.gamma)
+    except Exception:
+        pass
 
     data = load_input_file(args.input_file_path)
 
@@ -102,15 +127,22 @@ if __name__ == "__main__":
 
     run_info = {
         'source': 'svr',
+        'kernel': 'rbf',
+        'gamma': args.gamma,
+        'c': args.c,
+        'epsilon': args.epsilon,
         'feature_cols': args.feature_cols,
         'tiles': len(data),
-        'timeframe': timeframe
+        'timeframe': timeframe,
+        # For hyperparameter search
+        'experiment_number': args.experiment_number
     }
 
     print('Next Run:', run_info)
 
     # Do 10-fold cross validation on new data set
-    results = cross_validation(X_train, y_train)
+    results = cross_validation(
+        X_train, y_train, args.gamma, args.c, args.epsilon)
 
     # Merge run information with results
     results = {**run_info, **results}
