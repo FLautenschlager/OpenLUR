@@ -29,12 +29,14 @@ FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
 RESULTS_FILE_NAME = 'svr_output.csv'
 
+KERNEL = 'rbf'
 GAMMA = 'auto'
 C = 1.0
 EPSILON = 0.1
+DEGREE = 3
 
 
-def cross_validation(X_t, y_t, gamma, c, epsilon):
+def cross_validation(X_t, y_t, kernel, gamma, c, epsilon, degree):
     kf = KFold(n_splits=10, shuffle=True)
     rsq = []
     rsq_train = []
@@ -49,7 +51,7 @@ def cross_validation(X_t, y_t, gamma, c, epsilon):
 
         sc = StandardScaler()
 
-        r = SVR(kernel='rbf', degree=3, gamma=gamma, coef0=0.0, tol=0.001,
+        r = SVR(kernel=kernel, degree=degree, gamma=gamma, coef0=0.0, tol=0.001,
                 C=c, epsilon=epsilon, shrinking=True, cache_size=200,
                 verbose=False, max_iter=-1)
 
@@ -90,12 +92,16 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--feature_cols', default=FEATURE_COLS,
                         help='Feature columns to use for input')
     # Hyperparameters
+    parser.add_argument('-k', '--kernel', default=KERNEL,
+                        help='Kernel')
     parser.add_argument('-g', '--gamma', default=GAMMA,
                         help='Kernel coefficient')
     parser.add_argument('-c', default=C, type=float,
                         help='Penalty parameter C of the error term')
     parser.add_argument('-e', '--epsilon', default=EPSILON, type=float,
                         help='Specifies the epsilon-tube')
+    parser.add_argument('-d', '--degree', default=DEGREE, type=int,
+                        help='Degree of polynomial kernel function')
 
     parser.add_argument('-en', '--experiment_number', default=0, type=int,
                         help='Experiment number')
@@ -107,7 +113,7 @@ if __name__ == "__main__":
 
     if not isinstance(args.feature_cols, list):
         print('feature_cols is not a valid list')
-        
+
     try:
         args.gamma = float(args.gamma)
     except Exception:
@@ -127,10 +133,11 @@ if __name__ == "__main__":
 
     run_info = {
         'source': 'svr',
-        'kernel': 'rbf',
+        'kernel': args.kernel,
         'gamma': args.gamma,
         'c': args.c,
         'epsilon': args.epsilon,
+        'degree': args.degree,
         'feature_cols': args.feature_cols,
         'tiles': len(data),
         'timeframe': timeframe,
@@ -142,7 +149,7 @@ if __name__ == "__main__":
 
     # Do 10-fold cross validation on new data set
     results = cross_validation(
-        X_train, y_train, args.gamma, args.c, args.epsilon)
+        X_train, y_train, args.kernel, args.gamma, args.c, args.epsilon, args.degree)
 
     # Merge run information with results
     results = {**run_info, **results}
