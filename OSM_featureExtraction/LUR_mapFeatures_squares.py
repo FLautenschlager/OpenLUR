@@ -88,7 +88,7 @@ if __name__ == "__main__":
                         'roadtype_200', 'roadtype_300', 'roaddist_motorway',
                         'roaddist_trunk', 'roaddist_primary',
                         'roaddist_secondary', 'roaddist_tertiary',
-                        'roaddist_unclassified']
+                        'roaddist_unclassified', 'roaddist_residential']
     # data_new.columns = ['y', 'x', 'roadtype_100', 'roadtype_200', 'roadtype_300', 'roaddist_motorway',
     #                     'roaddist_trunk', 'roaddist_primary', 'roaddist_secondary', 'roaddist_tertiary']
 

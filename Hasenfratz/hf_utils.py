@@ -3,6 +3,7 @@ Utility functions specific to Hasenfratz' data set.
 """
 
 from os.path import isfile
+import portalocker
 
 import pandas as pd
 import scipy.io as sio
@@ -47,23 +48,32 @@ def write_results_file(output_file_path, results):
 
     if file_extension == 'json':
 
-        # Read old results file if it exists
-        if isfile(output_file_path):
-            old_results = pd.read_json(output_file_path)
+        # For json we have to deal with the concurrent file access therefore
+        # i use portalocker to lock the file during reading, constructing the
+        # new json, and writing
+        with portalocker.Lock(output_file_path, mode='a+') as f:
 
-            # Combine old and new results (even if they have different columns)
-            results = pd.concat(
-                [old_results, results], axis=0, ignore_index=True)
+            f.seek(0)
 
-        # Write combined results to file and retry indefinitely if it failed
-        while True:
-            try:
-                results.to_json(output_file_path)
-            except:
-                continue
-            break
+            # Read old results file if it exist
+            if f.read(1) != '':
+                f.seek(0)
+                old_results = pd.read_json(f)
+
+                # Delete old content
+                f.seek(0)
+                f.truncate()
+
+                # Combine old and new results (even if they have different columns)
+                results = pd.concat(
+                    [old_results, results], axis=0, ignore_index=True)
+
+            # Write combined results to file and retry indefinitely if it failed
+            results.to_json(f)
+
 
     elif file_extension == 'csv':
+
         # The initial write has to write the column headers if the file doesn't
         # exist yet
         initial_write = not isfile(output_file_path)
