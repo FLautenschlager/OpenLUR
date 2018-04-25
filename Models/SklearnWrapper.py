@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics import r2_score, mean_squared_error
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 from scipy.stats import shapiro
 
 from utils.MyPool import MyPool as Pool
@@ -74,6 +74,9 @@ class SklearnWrapper:
 
 		y_train = train_data[target]
 		y_test = test_data[target]
+
+		# train on smaller dataset
+		X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.33)
 
 		# self.print("Doing {}".format(path), 1)
 
