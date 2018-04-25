@@ -52,7 +52,9 @@ if __name__ == '__main__':
     regressor_paths = {
         'gam': join('Hasenfratz', 'gam_r_parallel.py'),
         'random_forest': join('Hasenfratz', 'rf.py'),
-        # 'mean': join('Hasenfratz', 'mean.py'),
+        'mean': join('Hasenfratz', 'mean.py'),
+        'svr': join('Hasenfratz', 'svr.py'),
+        'linear': join('Hasenfratz', 'linear.py'),
         # 'lasso': join('Hasenfratz', 'lasso.py'),
         'nn': join('..', 'environment-net', 'landuse_regression.py')
         # 'skl_nn': join('Hasenfratz', 'skl_nn.py')

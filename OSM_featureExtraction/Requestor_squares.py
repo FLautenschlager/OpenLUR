@@ -25,7 +25,7 @@ class Requestor:
 
     def __init__(self):
         self.conn = psycopg2.connect(
-            dbname='osm', host='localhost', port=5433)
+            dbname='osm', user='postgres', password='themoreyouknow', host='localhost', port=5432)
         self.cur = self.conn.cursor()
 
     def query_osm_polygon(self, y_query, x_query, lengths, key, value):
