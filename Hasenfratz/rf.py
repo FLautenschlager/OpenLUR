@@ -82,7 +82,7 @@ def cross_validation(data, n_estimators, max_features, max_depth,
                                   min_impurity_decrease=0.0,
                                   min_impurity_split=None, bootstrap=bootstrap,
                                   oob_score=False, n_jobs=1, random_state=None,
-                                  verbose=3, warm_start=False)
+                                  verbose=0, warm_start=False)
 
         pipe = Pipeline([('Imputer', im), ('Scaler', mm),
                          #  ('Polynomial', p),
