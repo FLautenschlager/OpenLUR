@@ -120,7 +120,7 @@ def main():
 
 	logger.info("Final score: RMSE: {:.2f}\tR2: {:.2f}".format(results.rmse.mean() / 1000, results.r2.mean()))
 
-	f = join(utils.paths.modeldatadir + join(str(args.seasonNumber), feat + "_RFOauto_{}s".format(args.time)) + ".p")
+	f = join(utils.paths.modeldatadir + join(str(args.seasonNumber), feat + "_RFOauto_{}s".format(args.time)))
 	if refit:
 		f = f + "_refit"
 
