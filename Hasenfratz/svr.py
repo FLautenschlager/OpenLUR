@@ -20,7 +20,7 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 
 from utils import paths
-from hf_utils import load_input_file, write_results_file
+from hf_utils import load_input_file, write_results_file, is_in
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(
@@ -36,7 +36,7 @@ EPSILON = 0.1
 DEGREE = 3
 
 
-def cross_validation(X_t, y_t, kernel, gamma, c, epsilon, degree):
+def cross_validation(data, kernel, gamma, c, epsilon, degree):
     kf = KFold(n_splits=10, shuffle=True)
     rsq = []
     rsq_train = []
@@ -45,9 +45,24 @@ def cross_validation(X_t, y_t, kernel, gamma, c, epsilon, degree):
     mae = []
     mae_train = []
 
-    for train, test in kf.split(X_t):
-        X_train, y_train = X_t[train, :], y_t[train]
-        X_test, y_test = X_t[test, :], y_t[test]
+    # Get the original unshifted grid and split the CV based on this
+    og_grid_data = data[(data['y'] % 100 == 0) & (data['x'] % 100 == 0)]
+
+    for _, test in kf.split(og_grid_data):
+        test_data = data.iloc[test]
+
+        # Gather all cells that do not overlap with a test cell for training 
+        train_data = data[data.apply(lambda c: not is_in(c, test_data), axis=1)]
+
+        X_train = train_data[args.feature_cols].values
+        y_train = train_data['pm_measurement'].values
+        X_test = test_data[args.feature_cols].values
+        y_test = test_data['pm_measurement'].values
+
+        X_train = np.ascontiguousarray(X_train)
+        y_train = np.ascontiguousarray(y_train)
+        X_test = np.ascontiguousarray(X_test)
+        y_test = np.ascontiguousarray(y_test)
 
         sc = StandardScaler()
 
@@ -121,12 +136,6 @@ if __name__ == "__main__":
 
     data = load_input_file(args.input_file_path)
 
-    X_train = data[args.feature_cols].values
-    y_train = data['pm_measurement'].values
-
-    X_train = np.ascontiguousarray(X_train)
-    y_train = np.ascontiguousarray(y_train)
-
     # Parse timeframe from file name
     tf_pattern = re.compile('\d{8}_\d{8}')
     timeframe = tf_pattern.search(basename(args.input_file_path)).group(0)
@@ -149,7 +158,7 @@ if __name__ == "__main__":
 
     # Do 10-fold cross validation on new data set
     results = cross_validation(
-        X_train, y_train, args.kernel, args.gamma, args.c, args.epsilon, args.degree)
+        data, args.kernel, args.gamma, args.c, args.epsilon, args.degree)
 
     # Merge run information with results
     results = {**run_info, **results}
