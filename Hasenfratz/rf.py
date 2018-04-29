@@ -20,7 +20,7 @@ from sklearn.model_selection import KFold
 import numpy as np
 
 from utils import paths
-from hf_utils import load_input_file, write_results_file, is_in
+from hf_utils import load_input_file, write_results_file, is_in, interpolate
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(
@@ -38,7 +38,8 @@ BOOTSTRAP = True
 
 
 def cross_validation(data, n_estimators, max_features, max_depth,
-                     min_samples_split, min_samples_leaf, bootstrap):
+                     min_samples_split, min_samples_leaf, bootstrap,
+                     interpolation_factor):
     kf = KFold(n_splits=10, shuffle=True)
     rsq = []
     rsq_train = []
@@ -55,6 +56,10 @@ def cross_validation(data, n_estimators, max_features, max_depth,
 
         # Gather all cells that do not overlap with a test cell for training 
         train_data = data[data.apply(lambda c: not is_in(c, test_data), axis=1)]
+
+        # Interpolate new rows for train_calib_data
+        train_data = interpolate(train_data, int(
+            interpolation_factor * len(train_data)))
 
         X_train = train_data[args.feature_cols].values
         y_train = train_data['pm_measurement'].values
@@ -122,6 +127,11 @@ if __name__ == "__main__":
                         help='File where to output the results')
     parser.add_argument('-f', '--feature_cols', default=FEATURE_COLS,
                         help='Feature columns to use for input')
+    parser.add_argument('-i', '--interpolation_factor', type=float, default=0.0,
+                        help='Number of rows that should be generated through' +
+                        ' interpolation as a percentage of train data length ' +
+                        '(example: len(train_data) = 200 and -i = 1 -> 200 ' +
+                        'interpolated rows, 400 rows overall)')
     # Hyperparameters
     parser.add_argument('-n', '--n_estimators', default=N_ESTIMATORS, type=int,
                         help='Number of trees in the forest')
@@ -189,7 +199,7 @@ if __name__ == "__main__":
     results = cross_validation(data, args.n_estimators,
                                args.max_features, args.max_depth,
                                args.min_samples_split, args.min_samples_leaf,
-                               args.bootstrap)
+                               args.bootstrap, args.interpolation_factor)
 
     # Merge run information with results
     results = {**run_info, **results}
