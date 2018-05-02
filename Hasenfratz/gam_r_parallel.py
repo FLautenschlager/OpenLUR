@@ -25,7 +25,7 @@ from rpy2.robjects.packages import importr
 from rpy2.rinterface import RRuntimeError
 
 from utils import paths
-from hf_utils import load_input_file, write_results_file, is_in
+from hf_utils import load_input_file, write_results_file, is_in, interpolate
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(
@@ -34,6 +34,7 @@ MODEL_VAR_PATH = join(paths.rdir, 'model_ha_variables.mat')
 FEATURE_COLS = ['industry', 'floorlevel', 'elevation', 'slope', 'expo',
                 'streetsize', 'traffic_tot', 'streetdist_l']
 RESULTS_FILE_NAME = 'gam_output.csv'
+
 
 def build_formula_string(feature_cols):
     """ Build formula for GAM depending on which features are used """
@@ -127,7 +128,8 @@ def calculate_gam(inputs):
     return rmse, mae, rsq, rsqval, adj_rsqval, devexpl, fac2, test_measure_predict
 
 
-def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repeat=40):
+def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS,
+                   repeat=40, interpolation_factor=0.0):
     """ Cross-validation of GAM """
 
     # Select test and training dataset for 10 fold cross validation
@@ -149,16 +151,22 @@ def cross_validate(calib_data, model_var, jobs, feature_cols=FEATURE_COLS, repea
     for _ in range(repeat):
 
         # Get the original unshifted grid and split the CV based on this
-        og_grid_data = calib_data[(calib_data['y'] % 100 == 0) & (calib_data['x'] % 100 == 0)]
+        og_grid_data = calib_data[(calib_data['y'] %
+                                   100 == 0) & (calib_data['x'] % 100 == 0)]
 
         for train_index_calib, test_index_calib in kf.split(og_grid_data):
-        # for train_index_calib, test_index_calib in kf.split(calib_data):
+            # for train_index_calib, test_index_calib in kf.split(calib_data):
             train_calib_data = calib_data.iloc[train_index_calib]
             test_calib_data = calib_data.iloc[test_index_calib]
 
-            # Gather all cells that do not overlap with a test cell for training 
-            train_calib_data = calib_data[calib_data.apply(lambda c: not is_in(c, test_calib_data), axis=1)]
-            
+            # Gather all cells that do not overlap with a test cell for training
+            train_calib_data = calib_data[calib_data.apply(
+                lambda c: not is_in(c, test_calib_data), axis=1)]
+
+            # Interpolate new rows for train_calib_data
+            train_calib_data = interpolate(train_calib_data, int(
+                interpolation_factor * len(train_calib_data))).reset_index()
+
             # Select test data from model_var (data NOT used for calibration)
             # Do this by finding all rows in model_var whose x and y coordinates are not
             # in train_calib_data
@@ -279,6 +287,11 @@ if __name__ == '__main__':
                         help='Feature columns to use for input')
     parser.add_argument('-j', '--jobs', default=cpu_count(), type=int,
                         help='Specifies the number of simultaneous jobs')
+    parser.add_argument('-i', '--interpolation_factor', type=float, default=0.0,
+                        help='Number of rows that should be generated through' +
+                        ' interpolation as a percentage of train data length ' +
+                        '(example: len(train_data) = 200 and -i = 1 -> 200 ' +
+                        'interpolated rows, 400 rows overall)')
     args = parser.parse_args()
 
     # Convert feature cols string to list
@@ -312,7 +325,6 @@ if __name__ == '__main__':
     else:
         print('Unkown model vars file type', args.model_vars.split('.')[-1])
 
-
     # Parse timeframe from file name
     tf_pattern = re.compile('\d{8}_\d{8}')
     timeframe = tf_pattern.search(basename(args.input_file_path)).group(0)
@@ -328,7 +340,8 @@ if __name__ == '__main__':
 
     # Do 10-fold cross validation on new data set
     results = cross_validate(
-        calib_data, model_var, args.jobs, feature_cols=args.feature_cols, repeat=1)
+        calib_data, model_var, args.jobs, feature_cols=args.feature_cols,
+        repeat=1, interpolation_factor=args.interpolation_factor)
 
     # Merge run information with results
     results = {**run_info, **results}

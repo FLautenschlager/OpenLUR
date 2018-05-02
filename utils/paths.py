@@ -1,7 +1,8 @@
 from os.path import expanduser, join
 
 # The last '' ensures that the paths have a trailing slash (os independent)
-rootdir = expanduser(join('~', 'Data', 'OpenSense', 'UFP_Delivery_Lautenschlager', 'matlab', ''))
+# rootdir = expanduser(join('~', 'Data', 'OpenSense', 'UFP_Delivery_Lautenschlager', 'matlab', ''))
+rootdir = expanduser(join('~', 'data', 'UFP_Delivery_Lautenschlager', 'matlab', ''))
 datadir = join(rootdir, 'data', 'seasonal_maps', '')
 filtereddatadir = join(datadir, 'filt', '')
 hadatadir = join(datadir, 'ha', '')

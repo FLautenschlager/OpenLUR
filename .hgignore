@@ -7,6 +7,10 @@ HeatMapBcc/pyIBCC
 HeatMapBcc/HeatMapBCC
 LUR_osm/virtActivate
 
+slurm*
+pythonAuto
+virtactiv
+
 *.ipynb
 *.json
 *.pyc
