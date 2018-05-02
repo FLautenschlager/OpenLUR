@@ -59,6 +59,7 @@ class SklearnWrapper:
 		self.print('Mean root-mean-square error: {} particles/cm^3'.format(rmse_model), 1)
 		self.print('Mean R2: {}'.format(rsq_model), 1)
 		self.print('The RMSE is normally distributed with W={}'.format(shapiro(results.rmse.values)[0]), 1)
+		self.name = self.name + "_smallData"
 
 		pickle.dump(results, open(join(self.out + self.name + ".p"), "wb"))
 
