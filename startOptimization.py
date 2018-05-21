@@ -1,7 +1,11 @@
 from subprocess import call
 import sys
 
-models = ["RF_autosearch.py", "RF_randomsearch.py"]
+models = [
+    "AutoML.py",
+    "RF_autosearch.py",
+    "RF_randomsearch.py"
+]
 seasons = [1,2,3,4]
 refits = [True, False]
 features = [1,3]
