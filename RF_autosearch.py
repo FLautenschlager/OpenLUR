@@ -64,8 +64,9 @@ def randomSearchFold(data):
 
 	r = AutoSklearnRegressor(
 		time_left_for_this_task=maxtime,
-		include_estimators=["random_forest", ], exclude_estimators=None,
+		include_estimators=["custom_random_forest", ], exclude_estimators=None,
 		include_preprocessors=["no_preprocessing", ], exclude_preprocessors=None,
+		ensemble_size=1, ensemble_nbest=1,
 		resampling_strategy='holdout', resampling_strategy_arguments={'train_size': 0.67}
 	)
 
