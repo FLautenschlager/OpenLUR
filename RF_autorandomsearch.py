@@ -12,6 +12,9 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import KFold
 
+from smac.facade.roar_facade import ROAR
+from smac.scenario.scenario import Scenario
+
 import utils.paths
 from utils.DataLoader import loadData
 from utils.MyPool import MyPool as Pool
@@ -53,6 +56,49 @@ def randomSearchSingle(X_train, y_train, X_test, y_test):
 	return rf, np.sqrt(mean_squared_error(rf.predict(X_test), y_test))
 
 
+def get_roar_object_callback(
+    scenario_dict,
+    seed,
+    ta,
+    backend,
+    metalearning_configurations,
+    runhistory,
+    run_id,
+):
+    """Random online adaptive racing."""
+    scenario_dict['input_psmac_dirs'] = backend.get_smac_output_glob()
+    scenario = Scenario(scenario_dict)
+    return ROAR(
+        scenario=scenario,
+        rng=seed,
+        tae_runner=ta,
+        runhistory=runhistory,
+        run_id=run_id,
+    )
+
+
+def get_random_search_object_callback(
+        scenario_dict,
+        seed,
+        ta,
+        backend,
+        metalearning_configurations,
+        runhistory,
+        run_id,
+):
+    """Random search."""
+    scenario_dict['input_psmac_dirs'] = backend.get_smac_output_glob()
+    scenario_dict['minR'] = len(scenario_dict['instances'])
+    scenario_dict['initial_incumbent'] = 'RANDOM'
+    scenario = Scenario(scenario_dict)
+    return ROAR(
+        scenario=scenario,
+        rng=seed,
+        tae_runner=ta,
+        runhistory=runhistory,
+        run_id=run_id,
+    )
+
 def randomSearchFold(data):
 	train_data, test_data, maxtime, feat_columns, target = data
 
@@ -67,6 +113,7 @@ def randomSearchFold(data):
 		include_estimators=["custom_random_forest", ], exclude_estimators=None,
 		include_preprocessors=["no_preprocessing", ], exclude_preprocessors=None,
 		ensemble_size=1, ensemble_nbest=1,
+                get_smac_object_callback=get_random_search_object_callback,
 		resampling_strategy='holdout', resampling_strategy_arguments={'train_size': 0.67}
 	)
 
@@ -121,7 +168,7 @@ def main():
 
 	logger.info("Final score: RMSE: {:.2f}\tR2: {:.2f}".format(results.rmse.mean() / 1000, results.r2.mean()))
 
-	f = join(utils.paths.modeldatadir + join(str(args.seasonNumber), feat + "_customRFOauto_{}s".format(args.time)))
+	f = join(utils.paths.modeldatadir + join(str(args.seasonNumber), feat + "_customRFOautoRandom_{}s".format(args.time)))
 	if refit:
 		f = f + "_refit"
 
