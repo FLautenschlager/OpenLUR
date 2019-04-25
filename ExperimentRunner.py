@@ -37,7 +37,7 @@ if __name__=="__main__":
     model = "Random_Forest_random_search"
     #model = "AutoML"
 
-    modelnames = list(models.keys())
+    modelnames = ["Random_Forest_random_search", "AutoML", "Random_Forest_Standard"]
     iterations = 2
     #run_londondata(model, iterations=5)
     for model in modelnames:
