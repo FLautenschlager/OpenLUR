@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import scipy.io as sio
 
-from utils import paths
+from experiments import paths
 
 BOUNDS_PATH = join(paths.rootdir, 'bounds')
 MODEL_VAR_PATH = join(paths.rdir, 'model_ha_variables.mat')

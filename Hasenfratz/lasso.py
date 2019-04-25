@@ -19,7 +19,8 @@ from sklearn.model_selection import KFold
 
 import numpy as np
 
-from utils import load_input_file, write_results_file, paths
+from utils import load_input_file, write_results_file
+from experiments import paths
 
 # Default values for program arguments
 INPUT_FILE_PATH = join(

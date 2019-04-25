@@ -24,7 +24,7 @@ from rpy2.robjects import pandas2ri
 from rpy2.robjects.packages import importr
 from rpy2.rinterface import RRuntimeError
 
-from utils import paths
+from experiments import paths
 from hf_utils import load_input_file, write_results_file, is_in, interpolate
 
 # Default values for program arguments

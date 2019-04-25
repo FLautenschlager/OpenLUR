@@ -19,7 +19,7 @@ from sklearn.model_selection import KFold
 
 import numpy as np
 
-from utils import paths
+from experiments import paths
 from hf_utils import load_input_file, write_results_file, is_in, interpolate
 
 # Default values for program arguments

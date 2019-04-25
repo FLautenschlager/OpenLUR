@@ -76,8 +76,8 @@ class GAM_featureSelection:
 		# Calculate Root-mean-square error model
 		rmse_model = results['rmse'].mean()
 		r2val = results['rsq'].mean()
-		list(r2 = results['rmse'].values)
-		list(rmse = results['rsq'].values)
+		r2 = list(results['rmse'].values)
+		rmse = list(results['rsq'].values)
 		#print(results['rsval'])
 		self.print('Root-mean-square error: {} particles/cm^3'.format(rmse_model))
 

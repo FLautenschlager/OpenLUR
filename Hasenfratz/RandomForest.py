@@ -16,7 +16,7 @@ homedir = expanduser("~/")
 if (homedir + "code-2017-land-use") not in sys.path:
 	print("Adding path to sys.path: " + homedir + "code-2017-land-use")
 	sys.path.append(homedir + "code-2017-land-use")
-from utils import paths
+from experiments import paths
 import LUR_osm.Saver as Saver
 
 

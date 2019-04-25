@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 
-from utils import paths
+from experiments import paths
 
 
 def feature(feat, row, col):

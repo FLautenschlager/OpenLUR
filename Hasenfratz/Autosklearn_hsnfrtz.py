@@ -4,7 +4,7 @@ import autosklearn.regression
 import numpy as np
 import scipy.io as sio
 
-from utils import paths
+from experiments import paths
 
 if __name__ == "__main__":
 
