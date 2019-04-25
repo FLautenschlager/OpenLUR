@@ -10,6 +10,9 @@ LUR_osm/virtActivate
 slurm*
 pythonAuto
 virtactiv
+venv
+venv/*
+OSM_featureExtraction/OSM-data
 
 *.ipynb
 *.json

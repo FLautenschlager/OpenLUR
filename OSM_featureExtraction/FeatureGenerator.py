@@ -1,24 +1,26 @@
 import argparse
-import csv
-import time
-import numpy as np
 
-import scipy.io as sio
+import numpy as np
+import pandas as pd
 from joblib import Parallel, delayed
 
-from OSM_featureExtraction import Requestor
-from utils import paths
+from OSM_featureExtraction import OSMRequestor
 from utils.wgs84_ch1903 import *
 
 
 class FeatureGenerator:
 
-    def __init__(self, dbname):
+    def __init__(self, dbname, filename=None, outpath=None):
         self.dbname = dbname
+        self.filename = dbname + ".csv"
+        if filename:
+            self.filename = filename
 
-    def __init__(self, latmin, latmax, lonmin, lonmax, dbname, granularity=0.001):
-        self.generateMap(latmin, latmax, lonmin, lonmax, granularity=0.001)
-        self.dbname = dbname
+        self.outpath = ""
+        if outpath:
+            self.outpath = outpath
+
+        self.featuremethods = [self.getStandardFeatures]
 
     def generateMap(self, latmin, latmax, lonmin, lonmax, granularity=0.001):
         self.data = []
@@ -28,6 +30,13 @@ class FeatureGenerator:
 
     def setData(self, data):
         self.data = data
+
+    def set_data_from_pandas(self, df, lon="longitude", lat="latitude", value="value"):
+        self.data = list(df[[lat, lon, value]].values)
+
+    def set_data_from_file(self, file, lon="longitude", lat="latitude", value="value"):
+        df = pd.read_csv(file)
+        return self.set_data_from_pandas(df, lon=lon, lat=lat, value=value)
 
     def setCHdata(self, data):
         for row in data:
@@ -45,59 +54,58 @@ class FeatureGenerator:
         total_len = len(self.data)
         for i, row in enumerate(self.data):
 
-            data_new.append(self.preproc_single_with_dist(row, self.dbname))
+            data_new.append(self.preproc_single(row))
 
             if i % 100 == 0:
                 print("{}".format(float(i) / total_len))
 
-        self.data_with_features = data_new
+        self.data_with_features = pd.DataFrame(data_new)
         return data_new
-
 
     def preproc_landuse_features_parallel(self, n_workers=1):
 
-        print("total rows: {}".format(len(self.data)))
+        print("Number of rows for the feature extraction: {}".format(len(self.data)))
 
-        data_new = Parallel(n_jobs=n_workers, verbose=10)(delayed(self.preproc_single_with_dist)((row, self.dbname)) for row in self.data)
-        self.data_with_features = data_new
+        data_new = Parallel(n_jobs=n_workers, verbose=10)(
+            delayed(self.preproc_single)(row) for row in self.data)
+        self.data_with_features = pd.DataFrame(data_new)
         return data_new
 
-    def preproc_single_with_dist(self, data):
-        #print(data)
-        row, city = data
-        r = Requestor.Requestor(city)
+    def preproc_single(self, row):
         lat = row[0]
         lon = row[1]
-        if len(row)==2:
-            row_new = [lat, lon, 0]
+        if len(row) == 2:
+            row_new = {"latitude": lat, "longitude": lon, "target": 0}
         else:
-            row_new = [lat, lon, row[2]]
-        row_new.extend(r.create_features_withDist(lon, lat))
+            row_new = {"latitude": lat, "longitude": lon, "target": row[2]}
+        [row_new.update(m(lat, lon)) for m in self.featuremethods]
 
         return row_new
+
+    def getStandardFeatures(self, lat, lon):
+        r = OSMRequestor.Requestor(self.dbname)
+        return r.create_features(lon, lat)
 
     def getDataWithFeatures(self):
         return self.data_with_features
 
     def saveFeatures(self):
-        outfile = paths.lurdata + "{}_mapfeatures.csv".format(self.dbname)
+        outfile = self.outpath + "{}_mapfeatures.csv".format(self.filename[:-4])
+        print(outfile)
         self.saveFeaturesToFile(outfile)
         return outfile
 
     def saveFeaturesToFile(self, outfile):
-        with open(outfile, 'w') as myfile:
-            wr = csv.writer(myfile)
+        self.data_with_features.to_csv(outfile, index=False)
+        print("Done! File saved as {}.".format(outfile))
 
-            for row in self.data_with_features:
-                wr.writerow(row)
-            print("Done! File saved as {}.".format(myfile.name))
+    def add_featuremethod(self, featuremethod):
+        self.featuremethods.append(featuremethod)
 
-
-def main(latmin, latmax, lonmin, lonmax, database, nWorkers):
-
-
-    fg = FeatureGenerator(latmin, latmax, lonmin, lonmax, database)
-    fg.preproc_landuse_features_parallel(nWorkers)
+def main(database, file, n_workers):
+    fg = FeatureGenerator(database)
+    fg.set_data_from_file(file, value="conct")
+    fg.preproc_landuse_features_parallel(n_workers)
     fg.saveFeatures()
 
 
@@ -106,10 +114,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("database", help="chose database, you previously made", type=str)
-    parser.add_argument('latmin', type=float, help='minimum latitude')
-    parser.add_argument('latmax', type=float, help='maximum latitude')
-    parser.add_argument('lonmin', type=float, help='minimum longitude')
-    parser.add_argument('lonmax', type=float, help='maximum longitude')
+    parser.add_argument("file", help="file to build features for", type=str)
     parser.add_argument("-n", "--nWorkers", help="Number of parallel processes.")
 
     args = parser.parse_args()
@@ -118,4 +123,4 @@ if __name__ == "__main__":
     if args.nWorkers:
         nWorkers = int(args.nWorkers)
 
-    main(args.latmin, args.latmax, args.lonmin, args.lonmax, args.database, nWorkers)
+    main(args.database, args.file, args.nWorkers)

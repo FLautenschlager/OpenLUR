@@ -7,7 +7,7 @@ from scipy.stats import shapiro
 from utils.MyPool import MyPool as Pool
 from utils.color import Color
 
-import utils.paths
+import experiments.paths
 import pickle
 from os.path import join
 
@@ -16,7 +16,7 @@ class SklearnWrapper:
 		self.njobs = njobs
 		self.niter = niter
 		self.verbosity = verbosity
-		self.out = utils.paths.modeldatadir
+		self.out = experiments.paths.modeldatadir
 
 
 	def test_model(self, data, feat_columns, target):

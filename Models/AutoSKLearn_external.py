@@ -1,6 +1,6 @@
 import pickle
 from os import listdir, mkdir
-from os.path import join, isfile, isdir
+from os.path import join, isdir
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import KFold
 from scipy.stats import shapiro
 
-from utils import paths
+from experiments import paths
 # from multiprocessing import Pool
 from utils.MyPool import MyPool as Pool
 from utils.color import Color

@@ -11,11 +11,11 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import KFold
 from scipy.stats import shapiro
 
-from utils import paths
+from experiments import paths
 from utils.color import Color
 import pickle
 from os.path import join
-import utils.paths
+import experiments.paths
 
 
 class GAM:
@@ -24,7 +24,7 @@ class GAM:
 		self.niter = niter
 		self.score = score
 		self.verbosity = verbosity
-		self.out = utils.paths.modeldatadir
+		self.out = experiments.paths.modeldatadir
 		self.name = name
 
 	def test_model(self, data, feat_columns, target):
@@ -147,7 +147,8 @@ class GAM:
 			elif verbosity==2:
 				print(Color.BOLD + message + Color.END)
 
-
+def gam_experiment(seasonNumber, iterations, train):
+	pass
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
