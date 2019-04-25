@@ -3,10 +3,6 @@ syntax: glob
 __pycache__
 .idea
 
-HeatMapBcc/pyIBCC
-HeatMapBcc/HeatMapBCC
-LUR_osm/virtActivate
-
 slurm*
 pythonAuto
 virtactiv
@@ -18,5 +14,4 @@ OSM_featureExtraction/OSM-data
 *.json
 *.pyc
 *.png
-*.csv
 ^paths.py$
