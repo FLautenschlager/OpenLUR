@@ -1,0 +1,14 @@
+version: '3'
+services:
+  postgres:
+    image: kartoza/postgis:10.0-2.4
+    environment:
+      - ALLOW_IP_RANGE=0.0.0.0/0
+    ports:
+      - 54320:5432
+    volumes:
+      - postgis-data:/var/lib/postgresql
+
+
+volumes:
+  postgis-data:

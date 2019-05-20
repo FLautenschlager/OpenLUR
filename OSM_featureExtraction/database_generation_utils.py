@@ -75,7 +75,7 @@ def crop(infile, outfile, latmin, latmax, lonmin, lonmax):
 def load_db(infile, dbname):
     print("Drop and create DB")
     try:
-        conn = psycopg2.connect("dbname=template1")
+        conn = psycopg2.connect(dbname="template1", user="docker", password="docker", port="54320")
     except psycopg2.DatabaseError:
         raise psycopg2.DatabaseError('I am unable to connect to the database {}.'.format(dbname))
 
@@ -93,7 +93,7 @@ def load_db(infile, dbname):
 
     print("Create extensions")
     try:
-        conn_new = psycopg2.connect("dbname={}".format(dbname))
+        conn_new = psycopg2.connect(dbname=dbname, user="docker", password="docker", port="54320")
         conn_new.autocommit = True
     except psycopg2.DatabaseError:
         raise psycopg2.DatabaseError('I am unable to connect to the database {}.'.format(dbname))

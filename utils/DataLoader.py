@@ -26,26 +26,22 @@ class Dataset:
 
     @staticmethod
     def OpenSenseOSM(season=1, path="data/OpenSenseOSM/"):
-        file = path + seasons[season - 1] + '_landUse_withDistances.csv'
+        file = path + seasons[season - 1] + '_OSM.csv'
 
-        feat_columns = ["commercial{}m".format(i) for i in range(50, 3050, 50)]
-        feat_columns.extend(["industrial{}m".format(i) for i in range(50, 3050, 50)])
-        feat_columns.extend(["residential{}m".format(i) for i in range(50, 3050, 50)])
+        data = pd.read_csv(file)
 
-        feat_columns.extend(["bigStreet{}m".format(i) for i in range(50, 1550, 50)])
-        feat_columns.extend(["localStreet{}m".format(i) for i in range(50, 1550, 50)])
-        feat_columns.extend(["distanceTrafficSignal", "distanceMotorway", "distancePrimaryRoad", "distanceIndustrial"])
+        cols = list(data.columns)
+        for col in cols:
+            d = data[col].dtypes
+            if d != "float64":
+                print(col)
+                print(d)
+        cols.remove("target")
+        cols.remove("x")
+        cols.remove("y")
 
-        target = 'pm_measurement'
-
-        data = pd.read_csv(file, header=None)
-
-        col_total = ['x', 'y', target]
-        col_total.extend(feat_columns)
-        data.columns = col_total
-
-        x_train = data[feat_columns].values
-        y_train = data[target].values
+        x_train = data[cols].values
+        y_train = data["target"].values
 
         x_test = None
         y_test = None

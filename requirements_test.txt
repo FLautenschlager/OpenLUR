@@ -1,0 +1,7 @@
+cython
+numpy
+pandas
+scipy
+auto-sklearn
+pygam
+psycopg2

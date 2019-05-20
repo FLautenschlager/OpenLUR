@@ -16,7 +16,11 @@ class AutoML(AbstractModel):
             self.param_search(x, y)
         self.m.refit(x, y)
 
-    def param_search(self, x, y, time=1200, **kwargs):
+    def param_search(self,
+                     x,
+                     y,
+                     time=600, #18000,
+                     **kwargs):
         self.m = AutoSklearnRegressor(
             time_left_for_this_task=time,
             resampling_strategy="cv",

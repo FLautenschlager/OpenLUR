@@ -2,12 +2,14 @@
 syntax: glob
 __pycache__
 .idea
+output
 
 slurm*
 pythonAuto
 virtactiv
 venv
 venv/*
+venv2
 OSM_featureExtraction/OSM-data
 
 *.ipynb
