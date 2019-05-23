@@ -1,12 +1,7 @@
+numpy==1.16.2
 cython
-numpy==1.14.5
-ConfigSpace==0.4.6
-pandas==0.22.0
-scikit-learn==0.19.1
-scipy==1.0.1
-joblib
-auto-sklearn==0.4.0
-psycopg2-binary
-rpy2
-tzlocal
+pandas
+scipy
+auto-sklearn
 pygam
+psycopg2

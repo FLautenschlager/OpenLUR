@@ -30,7 +30,7 @@ class RegressionRunner:
         return self.model.predict(X)
 
     def param_search(self, X, y, **kwargs):
-        results = self.model.param_search(X, y, iterations=1, **kwargs)
+        results = self.model.param_search(X, y, **kwargs)
         return results
 
     def evaluate(self, target, prediction):

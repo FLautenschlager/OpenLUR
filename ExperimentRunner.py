@@ -19,7 +19,7 @@ features = [
 feature_type=features[3]
 
 modelnames = [
-    "AutoML",
+    #"AutoML",
     "Random_Forest_random_search",
     "Random_Forest_Standard",
     # "GAM"
@@ -92,6 +92,8 @@ def run_on_both(model, iterations=2, filename=None, season=1):
             y_train = y_train_os_split
             x_test = x_test_os_split
             y_test = y_test_os_split
+        else:
+            break
 
         results.append(run_regression(model, x_train, y_train, x_test, y_test))
 
@@ -109,8 +111,8 @@ def run_on_both(model, iterations=2, filename=None, season=1):
 if __name__=="__main__":
 
 
-
-    for model in modelnames:
-         #run_londondata(model, iterations=iterations, filename="output/{}_longrun.p".format(model))
-         run_on_both(model, iterations=iterations, filename="output/{}_train_{}_{}_iterations.p".format(model, feature_type, iterations))
+    for feature_type in features:
+        for model in modelnames:
+             #run_londondata(model, iterations=iterations, filename="output/{}_longrun.p".format(model))
+             run_on_both(model, iterations=iterations, filename="output/{}_train_{}_{}_iterations.p".format(model, feature_type, iterations))
 

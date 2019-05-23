@@ -1,5 +1,5 @@
+numpy==1.16.2
 cython
-numpy
 pandas
 scipy
 auto-sklearn
