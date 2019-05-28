@@ -5,27 +5,31 @@ from glob import iglob
 seasons = ["pm_ha_ext_01042012_30062012", "pm_ha_ext_01072012_31092012",
            "pm_ha_ext_01102012_31122012", "pm_ha_ext_01012013_31032013"]
 
+rootpath = "data/"
+defaultpathOSM = rootpath + "OpenSenseOSM/"
+defaultpathOSO = rootpath + "OpenSenseOriginal/"
+defaultpathLAEI = rootpath + "laeiOSM/"
 
 class Dataset:
 
     @staticmethod
-    def OpenSenseOSM1(path="data/OpenSenseOSM/"):
+    def OpenSenseOSM1(path=defaultpathOSM):
         return Dataset.OpenSenseOSM(1, path=path)
 
     @staticmethod
-    def OpenSenseOSM2(path="data/OpenSenseOSM/"):
+    def OpenSenseOSM2(path=defaultpathOSM):
         return Dataset.OpenSenseOSM(2, path=path)
 
     @staticmethod
-    def OpenSenseOSM3(path="data/OpenSenseOSM/"):
+    def OpenSenseOSM3(path=defaultpathOSM):
         return Dataset.OpenSenseOSM(3, path=path)
 
     @staticmethod
-    def OpenSenseOSM4(path="data/OpenSenseOSM/"):
+    def OpenSenseOSM4(path=defaultpathOSM):
         return Dataset.OpenSenseOSM(4, path=path)
 
     @staticmethod
-    def OpenSenseOSM(season=1, path="data/OpenSenseOSM/"):
+    def OpenSenseOSM(season=1, path=defaultpathOSM):
         file = path + seasons[season - 1] + '_OSM.csv'
 
         data = pd.read_csv(file)
@@ -41,7 +45,7 @@ class Dataset:
         cols.remove("y")
 
         x_train = data[cols].values
-        y_train = data["target"].values
+        y_train = data["target"].values/1000
 
         x_test = None
         y_test = None
@@ -49,23 +53,23 @@ class Dataset:
         return x_train, y_train, x_test, y_test
 
     @staticmethod
-    def OpenSenseOriginal1(path="data/OpenSenseOriginal/"):
+    def OpenSenseOriginal1(path=defaultpathOSO):
         return Dataset.OpenSenseOriginal(1, path=path)
 
     @staticmethod
-    def OpenSenseOriginal2(path="data/OpenSenseOriginal/"):
+    def OpenSenseOriginal2(path=defaultpathOSO):
         return Dataset.OpenSenseOriginal(2, path=path)
 
     @staticmethod
-    def OpenSenseOriginal3(path="data/OpenSenseOriginal/"):
+    def OpenSenseOriginal3(path=defaultpathOSO):
         return Dataset.OpenSenseOriginal(3, path=path)
 
     @staticmethod
-    def OpenSenseOriginal4(path="data/OpenSenseOriginal/"):
+    def OpenSenseOriginal4(path=defaultpathOSO):
         return Dataset.OpenSenseOriginal(4, path=path)
 
     @staticmethod
-    def OpenSenseOriginal(season=1, path="data/OpenSenseOriginal/"):
+    def OpenSenseOriginal(season=1, path=defaultpathOSO):
         file = path + seasons[season - 1] + '.mat'
 
         pm_ha = sio.loadmat(file)['pm_ha']
@@ -83,7 +87,7 @@ class Dataset:
         target = 'pm_measurement'
 
         x_train = data[feat_columns].values
-        y_train = data[target].values
+        y_train = data[target].values/1000
 
         x_test = None
         y_test = None
@@ -91,7 +95,7 @@ class Dataset:
         return x_train, y_train, x_test, y_test
 
     @staticmethod
-    def laeiOSM(path="data/laeiOSM/"):
+    def laeiOSM(path=defaultpathLAEI):
         train = []
         test = None
         for file in iglob(path + "*"):
