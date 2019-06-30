@@ -1,12 +1,14 @@
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import numpy as np
 import pandas as pd
+import logging
 
 class AbstractModel:
 
     def __init__(self):
         self.m = None
         self.model = None
+        self.log = logging.getLogger(self.__class__.__name__)
 
     def score_function(self, target, prediction):
         rmse = np.sqrt(mean_squared_error(target, prediction))
@@ -32,11 +34,12 @@ class AbstractModel:
             raise NotImplementedError("Model has not been trained yet.")
 
     @staticmethod
-    def concat_results(rmse, mae, r2):
+    def concat_results(rmse, mae, r2, model_dict={}):
         result = pd.Series()
         result['rmse'] = rmse
         result['mae'] = mae
         result['r2'] = r2
+        result["model_dict"] = model_dict
 
         return result
 
