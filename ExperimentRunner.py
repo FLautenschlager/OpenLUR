@@ -5,6 +5,7 @@ import time
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 from regression_runner import run_regression
 from utils.DataLoader import Dataset
@@ -21,7 +22,7 @@ features = [
 # feature_type=features[3]
 
 modelnames = [
-    "AutoML",
+    #"AutoML",
     "Random_Forest_random_search",
     "Random_Forest_Standard",
     # "GAM"
@@ -42,6 +43,7 @@ def run_londondata(model, iterations=2, filename=None):
     starttime = time.time()
     results = []
     for i in range(iterations):
+        logging.info("Starting iteration {}/{}".format(i, iterations))
         results.append(run_regression(model, x_train, y_train, x_test, y_test))
 
     results = pd.concat(results, ignore_index=True)
@@ -59,6 +61,14 @@ def run_londondata(model, iterations=2, filename=None):
 def run_on_both(model, iterations=2, filename=None, season=1):
     x_train_laei, y_train_laei, x_test_laei, y_test_laei = Dataset.laeiOSM()
     x_train_os, y_train_os, x_test_os, y_test_os = Dataset.OpenSenseOSM(season)
+
+    # Scaling
+    laei_scaler = StandardScaler().fit(y_train_laei.reshape(-1, 1))
+    os_scaler = StandardScaler().fit(y_train_os.reshape(-1, 1))
+    y_train_laei = laei_scaler.transform(y_train_laei.reshape(-1, 1)).ravel()
+    y_test_laei = laei_scaler.transform(y_test_laei.reshape(-1, 1)).ravel()
+    y_train_os = os_scaler.transform(y_train_os.reshape(-1, 1)).ravel()
+    #y_test_os = laei_scaler.transform(y_test_os.reshape(1, -1)).squeeze()
 
     logging.info("Start model {} on {}".format(model, feature_type))
     starttime = time.time()
