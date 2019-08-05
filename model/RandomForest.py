@@ -18,11 +18,7 @@ class RandomForestRandomSearch(AbstractModel):
     def param_search(self, x, y, iterations=60, score_rank_lowest=False, processes=1,
                      **kwargs):
 
-        inputs = []
-
-        for i in range(iterations):
-            modeldict = self.random_modeldict()
-            inputs.append((x, y, modeldict))
+        modeldicts = [self.random_modeldict() for i in range(iterations)]
 
         standarddict = {
             'bootstrap': True,
@@ -32,12 +28,9 @@ class RandomForestRandomSearch(AbstractModel):
             'n_estimators': 10
         }
 
-        inputs.append((x, y, standarddict))
+        modeldicts.append(standarddict)
 
-        pool = Pool(processes=int(processes))
-        results = pd.DataFrame(pool.map(self.param_search_iteration, inputs))
-        pool.close()
-        pool.join()
+        results = pd.DataFrame([self.param_search_para(m, x, y, processes) for m in modeldicts])
 
         results.columns = ['rmse', 'mae', 'r2', 'model_dict']
         results.sort_values("r2", ascending=False, inplace=True)
@@ -47,6 +40,27 @@ class RandomForestRandomSearch(AbstractModel):
 
         self.log.debug("Best Model: score: {:.2f}".format(results.iloc[0].r2))
         return self.concat_results(best_model['rmse'], best_model['mae'], best_model['r2'], best_model["model_dict"])
+
+    def param_search_para(self, modeldict, x, y, processes):
+
+        modeldict["n_jobs"] = processes
+        kf = KFold(n_splits=10, shuffle=True)
+        rmse = []
+        mae = []
+        r2 = []
+        for train_index, test_index in kf.split(x, y):
+            X_train, X_test = x[train_index], x[test_index]
+            y_train, y_test = y[train_index], y[test_index]
+            m = self.model(**modeldict)
+            m.fit(X_train, y_train)
+            predictions = m.predict(X_test)
+            rmse_iter, mae_iter, r2_iter = self.score_function(y_test, predictions)
+            rmse.append(rmse_iter)
+            mae.append(mae_iter)
+            r2.append(r2_iter)
+
+        self.log.debug("{:135}: {: 6.4f}".format("{}".format(modeldict), np.mean(r2)))
+        return np.mean(rmse), np.mean(mae), np.mean(r2), modeldict
 
     def param_search_iteration(self, inputs):
         x, y, modeldict = inputs
