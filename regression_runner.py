@@ -43,7 +43,7 @@ class RegressionRunner:
 
     def run(self, x_train, y_train, x_test=None, y_test=None):
 
-        search_results = self.param_search(x_train, y_train)
+        search_results = self.param_search(x_train, y_train, processes=10)
         search_results['type'] = "search"
         self.train(x_train, y_train)
         if x_test.any():
