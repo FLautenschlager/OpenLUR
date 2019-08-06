@@ -15,9 +15,9 @@ logging.basicConfig(format='%(levelname)s [%(name)s]:%(message)s', level=logging
 
 features = [
     "os",
-    # "laei_small",
+     "laei_small",
     # "laei",
-    # "both"
+     "both"
 ]
 # feature_type=features[3]
 
