@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.18.0 (06a2e56)
+  labels:
+    io.kompose.service: lautenschlager-landuse
+  name: lautenschlager-landuse
+  namespace: lautenschlager
+spec:
+  template:
+    metadata:
+      labels:
+        io.kompose.service: lautenschlager-landuse
+    spec:
+      containers:
+        - image: ls6-staff-registry.informatik.uni-wuerzburg.de/lautenschlager-landuse:latest
+          imagePullPolicy: Always
+          name: lautenschlager-landuse
+          resources:
+            requests:
+              cpu: 2
+              memory: 8Gi
+            limits:
+              cpu: 2
+              memory: 8Gi
+          volumeMounts:
+            - mountPath: /code
+              name: landuse
+      restartPolicy: OnFailure
+      volumes:
+        - name: landuse
+          cephfs:
+            monitors:
+              - 132.187.14.16:6789
+              - 132.187.14.17:6789
+              - 132.187.14.19:6789
+              - 132.187.14.20:6789
+            user: lautenschlager
+            path: "/home/ls6/lautenschlager/code-2017-land-use"
+            secretRef:
+              name: ceph-secret
+      imagePullSecrets:
+        - name: ls6-staff-registry

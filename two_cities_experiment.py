@@ -17,7 +17,7 @@ logging.basicConfig(format='%(levelname)s [%(name)s]:%(message)s', level=logging
 
 features = "both"
 modelnames = "Random_Forest_random_search"
-iterations = 10
+iterations = 40
 
 
 def run(iterations=2, filename=None, season=1, laei_size=180):
@@ -36,7 +36,7 @@ def run(iterations=2, filename=None, season=1, laei_size=180):
     #y_test_os = laei_scaler.transform(y_test_os.reshape(1, -1)).squeeze()
 
     logging.info("Start model {} on {} with {} training examples from laei".format(model, feature_type, laei_size))
-    writer = SummaryWriter(comment=filename.split("/")[-1][:-2])
+    writer = SummaryWriter(comment="_{}".format(filename.split("/")[-1][:-2]))
     starttime = time.time()
     input = []
     results = []
@@ -73,5 +73,6 @@ def run(iterations=2, filename=None, season=1, laei_size=180):
 
 if __name__ == "__main__":
     logging.info("start")
-    train_size = 20
-    run(iterations=iterations, filename="output/two_cities_experiment_{}laei_{}iterations.p".format(train_size, iterations), laei_size=train_size)
+    for train_size in [20,40,60,80,100,150,200,300,400,500,1000]:
+    #train_size = 20
+        run(iterations=iterations, filename="output/two_cities_experiment_{}laei_{}iterations.p".format(train_size, iterations), laei_size=train_size)
