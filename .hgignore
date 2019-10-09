@@ -3,6 +3,7 @@ syntax: glob
 __pycache__
 .idea
 output
+virtualenv
 
 slurm*
 pythonAuto

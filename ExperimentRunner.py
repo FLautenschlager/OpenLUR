@@ -19,10 +19,10 @@ from utils.color import Color
 logging.basicConfig(format='%(levelname)s [%(name)s]:%(message)s', level=logging.INFO)
 
 features = [
-    #"os",
-    # "laei_small",
-     "laei",
-    # "both"
+    "os",
+     "laei_small",
+    # "laei",
+     "both"
 ]
 # feature_type=features[3]
 
