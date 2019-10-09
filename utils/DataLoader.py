@@ -31,7 +31,6 @@ class Dataset:
     @staticmethod
     def OpenSenseOSM(season=1, path=defaultpathOSM):
         file = path + seasons[season - 1] + '_OSM.csv'
-
         data = pd.read_csv(file)
 
         cols = list(data.columns)
@@ -41,10 +40,17 @@ class Dataset:
                 print(col)
                 print(d)
         cols.remove("target")
-        cols.remove("x")
-        cols.remove("y")
+        try:
+            cols.remove("x")
+            cols.remove("y")
+        except ValueError:
+            try:
+                cols.remove("latitude")
+                cols.remove("longitude")
+            except ValueError:
+                pass
 
-        x_train = data[cols].values
+        x_train = data[cols]
         y_train = data["target"].values/1000
 
         x_test = None
@@ -86,7 +92,7 @@ class Dataset:
                         'streetdist_l']
         target = 'pm_measurement'
 
-        x_train = data[feat_columns].values
+        x_train = data[feat_columns]
         y_train = data[target].values/1000
 
         x_test = None
@@ -115,8 +121,8 @@ class Dataset:
         cols.remove("latitude")
         cols.remove("longitude")
 
-        x_train = train[cols].values
-        x_test = test[cols].values
+        x_train = train[cols]
+        x_test = test[cols]
         y_train = train["target"].values
         y_test = test["target"].values
 

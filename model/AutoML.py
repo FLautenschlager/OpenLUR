@@ -19,8 +19,9 @@ class AutoML(AbstractModel):
     def param_search(self,
                      x,
                      y,
-                     time=600, #18000,
+                     time_per_sample=3.5,
                      **kwargs):
+        time = int(len(y)*time_per_sample)
         self.m = AutoSklearnRegressor(
             time_left_for_this_task=time,
             resampling_strategy="cv",

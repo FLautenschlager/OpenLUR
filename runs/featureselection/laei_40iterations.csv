@@ -1,0 +1,41 @@
+,0,1
+0,0.5201526164349419,['bigRoad_50m']
+1,0.4156784278162824,['bigRoad_50m']
+2,0.47561289149558195,"['bigRoad_100m', 'primary']"
+3,0.45395758684718157,['bigRoad_50m']
+4,0.5669380220863327,"['bigRoad_50m', 'primary', 'residential_1800m']"
+5,0.4289275455206707,['bigRoad_50m']
+6,0.4677375338650954,['bigRoad_50m']
+7,0.4750934879169014,"['bigRoad_50m', 'primary']"
+8,0.40220886463141525,['bigRoad_50m']
+9,0.5592597201383198,"['bigRoad_100m', 'traffic_signals', 'primary']"
+10,0.5127182770507778,"['bigRoad_50m', 'primary']"
+11,0.4476799192998544,['bigRoad_50m']
+12,0.5490305929621038,['bigRoad_50m']
+13,0.5965218259086343,"['traffic_signals', 'bigRoad_150m', 'primary']"
+14,0.49870414244131966,['bigRoad_50m']
+15,0.6216501190023374,"['traffic_signals', 'primary', 'bigRoad_100m']"
+16,0.5689853202882822,"['bigRoad_100m', 'primary']"
+17,0.5839480675733052,"['bigRoad_50m', 'traffic_signals']"
+18,0.5182731282614539,"['bigRoad_50m', 'primary', 'bigRoad_150m']"
+19,0.5239728444242736,['bigRoad_50m']
+20,0.5162416451157792,['bigRoad_50m']
+21,0.6055265108066268,"['bigRoad_50m', 'primary', 'residential_1800m']"
+22,0.4419701394820459,['bigRoad_50m']
+23,0.6556396942832485,"['bigRoad_100m', 'primary', 'traffic_signals', 'residential_2500m']"
+24,0.4756917046671939,"['bigRoad_100m', 'primary']"
+25,0.44085556656889036,['bigRoad_50m']
+26,0.5109178560160033,['bigRoad_50m']
+27,0.5209243787383141,"['traffic_signals', 'primary', 'bigRoad_100m']"
+28,0.4150071530492595,['bigRoad_50m']
+29,0.47008036720695134,['bigRoad_50m']
+30,0.5418865434557804,"['bigRoad_100m', 'primary']"
+31,0.4967763539425736,['bigRoad_50m']
+32,0.5223921094283667,"['traffic_signals', 'bigRoad_50m', 'primary']"
+33,0.3909427857610406,['bigRoad_50m']
+34,0.3962929677777187,['bigRoad_50m']
+35,0.4417329183452211,['bigRoad_50m']
+36,0.4882921060850717,"['bigRoad_50m', 'primary']"
+37,0.5237450421674685,"['traffic_signals', 'bigRoad_100m', 'bigRoad_50m']"
+38,0.47739497754598714,['bigRoad_50m']
+39,0.4756342119610162,"['bigRoad_50m', 'primary']"

@@ -21,11 +21,17 @@ class GAM(AbstractModel):
             X_train, X_test = x[train_index], x[test_index]
             y_train, y_test = y[train_index], y[test_index]
             self.m = self.model()
-            self.m.fit(X_train, y_train)
+            self.m.gridsearch(X_train, y_train)
             predictions = self.m.predict(X_test)
-            rmse, mae, r2 = self.score_function(y_test, predictions)
+            rmse_iter, mae_iter, r2_iter = self.score_function(y_test, predictions)
+            rmse.append(rmse_iter)
+            mae.append(mae_iter)
+            r2.append(r2_iter)
 
-            logging.info(
-                "Reached a RMSE of {}, MAE of {} and R2 of {}.".format(np.mean(rmse), np.mean(mae), np.mean(r2)))
+        self.m = self.model()
+        self.m.gridsearch(x, y)
 
-        return self.concat_results(rmse, mae, r2)
+        return np.mean(rmse), np.mean(mae), np.mean(r2), {}
+
+    def fit(self, x, y, **kwargs):
+        pass

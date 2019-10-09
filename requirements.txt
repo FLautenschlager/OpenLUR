@@ -2,6 +2,10 @@ numpy==1.16.2
 cython
 pandas
 scipy
+sklearn
 auto-sklearn
 pygam
 psycopg2
+tensorboardX
+pillow
+tqdm

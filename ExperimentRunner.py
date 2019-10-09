@@ -6,6 +6,11 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from tensorboardX import SummaryWriter
+#from multiprocessing import Pool
+import multiprocessing as mp
+
+from utils.MyPool import MyPool as Pool
 
 from regression_runner import run_regression
 from utils.DataLoader import Dataset
@@ -14,51 +19,42 @@ from utils.color import Color
 logging.basicConfig(format='%(levelname)s [%(name)s]:%(message)s', level=logging.INFO)
 
 features = [
-    "os",
+    #"os",
     # "laei_small",
-    # "laei",
+     "laei",
     # "both"
 ]
 # feature_type=features[3]
 
 modelnames = [
     #"AutoML",
-    "Random_Forest_random_search",
-    "Random_Forest_Standard",
-    # "GAM"
+    #"Random_Forest_random_search"#,
+    #"Random_Forest_Standard",
+     "GAM"
 ]
-iterations = 40
+iterations = 10
 
 
-def run_londondata_mapper(args):
-    model, iterations = args
-    run_londondata(model, iterations=iterations)
+def split_os(x, y):
+    return train_test_split(x, y, test_size=0.1)
 
+def split_laei(x, y, x_test, y_test, trainsize=180):
+    # select 180 points from laei:
+    idx = np.random.choice(x.shape[0], trainsize, replace=False)
+    x_train_laei_split = x.loc[idx, :]
+    y_train_laei_split = y[idx]
 
-def run_londondata(model, iterations=2, filename=None):
-    x_train, y_train, x_test, y_test = Dataset.laeiOSM()
+    # select 20 points from laei (test):
+    idx = np.random.choice(x_test.shape[0], 20, replace=False)
+    x_test_laei_split = x_test.loc[idx, :]
+    y_test_laei_split = y_test[idx]
+    return x_train_laei_split, x_test_laei_split, y_train_laei_split, y_test_laei_split
 
-    logging.info("Start model {}".format(model))
+def run_regression_wrapper(input):
+    model, x_train, y_train, x_test, y_test, iteration, writer = input
+    return run_regression(model, x_train, y_train, x_test, y_test, iteration=iteration, tensorboard=writer)
 
-    starttime = time.time()
-    results = []
-    for i in range(iterations):
-        logging.info("Starting iteration {}/{}".format(i, iterations))
-        results.append(run_regression(model, x_train, y_train, x_test, y_test))
-
-    results = pd.concat(results, ignore_index=True)
-    timediff = time.time() - starttime
-
-    search_results = results[results.type == "search"]
-    logging.info(
-        Color.BOLD + Color.GREEN + "Meaned over {} iterations ({} minutes each), the model {} reached a RMSE of {}, MAE of {} and R2 of {}.".format(
-            iterations, timediff / 60 / iterations, model, search_results.rmse.mean(), search_results.mae.mean(),
-            search_results.r2.mean()) + Color.END)
-    if filename:
-        pickle.dump(results, open(filename, "wb"))
-
-
-def run_on_both(model, iterations=2, filename=None, season=1):
+def run(model, iterations=2, filename=None, season=1):
     x_train_laei, y_train_laei, x_test_laei, y_test_laei = Dataset.laeiOSM()
     x_train_os, y_train_os, x_test_os, y_test_os = Dataset.OpenSenseOSM(season)
 
@@ -71,41 +67,24 @@ def run_on_both(model, iterations=2, filename=None, season=1):
     #y_test_os = laei_scaler.transform(y_test_os.reshape(1, -1)).squeeze()
 
     logging.info("Start model {} on {}".format(model, feature_type))
+    writer = SummaryWriter(comment="_{}_{}_{}iterations".format(feature_type, model, iterations))
     starttime = time.time()
+    input = []
     results = []
     for i in range(iterations):
 
-        # select 180 points from laei:
-        idx = np.random.choice(x_train_laei.shape[0], 180, replace=False)
-        x_train_laei_split = x_train_laei[idx, :]
-        y_train_laei_split = y_train_laei[idx]
-
-        # select 20 points from laei (test):
-        idx = np.random.choice(x_test_laei.shape[0], 20, replace=False)
-        x_test_laei_split = x_test_laei[idx, :]
-        y_test_laei_split = y_test_laei[idx]
+        # sample laei in 180/20
+        x_train_laei_split, x_test_laei_split, y_train_laei_split, y_test_laei_split = split_laei(x_train_laei, y_train_laei, x_test_laei, y_test_laei)
 
         # split os in 180/20
-        x_train_os_split, x_test_os_split, y_train_os_split, y_test_os_split = train_test_split(x_train_os, y_train_os,
-                                                                                                test_size=0.1,
-                                                                                                random_state=42)
-
-        # Scaling y-values as differences from mean
-        laei_mean = np.mean(y_train_laei_split)
-        os_mean = np.mean(y_train_os_split)
-
-        y_train_laei_split = y_train_laei_split - laei_mean
-        y_test_laei_split = y_test_laei_split - laei_mean
-
-        y_train_os_split = y_train_os_split - os_mean
-        y_test_os_split = y_test_os_split - os_mean
+        x_train_os_split, x_test_os_split, y_train_os_split, y_test_os_split = split_os(x_train_os, y_train_os)
 
         if feature_type == "both":
             # concatenate os and laei data
-            x_train = np.concatenate((x_train_laei_split, x_train_os_split), axis=0)
-            x_test = np.concatenate((x_test_laei_split, x_test_os_split), axis=0)
-            y_train = np.concatenate((y_train_laei_split, y_train_os_split), axis=0)
-            y_test = np.concatenate((y_test_laei_split, y_test_os_split), axis=0)
+            x_train = np.concatenate((x_train_os_split, x_train_laei_split), axis=0)
+            x_test = np.concatenate((x_test_os_split, x_test_laei_split), axis=0)
+            y_train = np.concatenate((y_train_os_split, y_train_laei_split), axis=0)
+            y_test = np.concatenate((y_test_os_split, y_test_laei_split), axis=0)
         elif feature_type == "laei_small":
             x_train = x_train_laei_split
             y_train = y_train_laei_split
@@ -124,7 +103,10 @@ def run_on_both(model, iterations=2, filename=None, season=1):
         else:
             break
 
-        results.append(run_regression(model, x_train, y_train, x_test, y_test))
+        input.append((model, x_train, y_train, x_test, y_test, i+1, writer))
+
+        results.append(run_regression_wrapper(input[-1]))
+        print(results[-1])
 
     results = pd.concat(results, ignore_index=True)
     timediff = time.time() - starttime
@@ -147,5 +129,5 @@ if __name__ == "__main__":
     for feature_type in features:
         for model in modelnames:
             # run_londondata(model, iterations=iterations, filename="output/{}_longrun.p".format(model))
-            run_on_both(model, iterations=iterations,
+            run(model, iterations=iterations,
                         filename="output/{}_train_{}_{}_iterations.p".format(model, feature_type, iterations))

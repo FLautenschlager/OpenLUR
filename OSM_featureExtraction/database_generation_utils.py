@@ -75,7 +75,7 @@ def crop(infile, outfile, latmin, latmax, lonmin, lonmax):
 def load_db(infile, dbname):
     print("Drop and create DB")
     try:
-        conn = psycopg2.connect(dbname="template1", user="docker", password="docker", port="54320")
+        conn = psycopg2.connect(dbname="template1", user="docker", password="docker", port="5432", host="172.18.0.2")
     except psycopg2.DatabaseError:
         raise psycopg2.DatabaseError('I am unable to connect to the database {}.'.format(dbname))
 
@@ -93,7 +93,7 @@ def load_db(infile, dbname):
 
     print("Create extensions")
     try:
-        conn_new = psycopg2.connect(dbname=dbname, user="docker", password="docker", port="54320")
+        conn_new = psycopg2.connect(dbname=dbname, user="docker", password="docker", port="5432", host="172.18.0.2")
         conn_new.autocommit = True
     except psycopg2.DatabaseError:
         raise psycopg2.DatabaseError('I am unable to connect to the database {}.'.format(dbname))
@@ -102,8 +102,8 @@ def load_db(infile, dbname):
 
     cur_new.execute("CREATE EXTENSION postgis; CREATE EXTENSION hstore;")
 
-    print("Load data to db")
-    subprocess.call(["osm2pgsql", "--create", "--database", dbname, "-C", "10000", infile])
+    print("Load data to db: {}".format(infile))
+    subprocess.call(["osm2pgsql", "--create", "--database", dbname, "--username", "docker", "--password", "--host", "172.18.0.2", infile])
 
     print("Creating indexes")
     fd = open('OSM_featureExtraction/table_geography_creation.sql', 'r')

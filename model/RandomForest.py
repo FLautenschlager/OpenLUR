@@ -43,7 +43,6 @@ class RandomForestRandomSearch(AbstractModel):
 
     def param_search_para(self, modeldict, x, y, processes):
 
-        modeldict["n_jobs"] = processes
         kf = KFold(n_splits=10, shuffle=True)
         rmse = []
         mae = []
@@ -64,6 +63,7 @@ class RandomForestRandomSearch(AbstractModel):
 
     def param_search_iteration(self, inputs):
         x, y, modeldict = inputs
+        modeldict["n_jobs"] = 4
         kf = KFold(n_splits=10, shuffle=True)
         rmse = []
         mae = []
