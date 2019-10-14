@@ -13,6 +13,9 @@ venv/*
 venv2
 OSM_featureExtraction/OSM-data
 
+ipynb
+ipynb/*
+
 *.ipynb
 *.json
 *.pyc
