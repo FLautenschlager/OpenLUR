@@ -42,8 +42,8 @@ def run(iterations=2, filename=None, season=1, laei_size=180):
         x_train_laei_split, x_test_laei_split, y_train_laei_split, y_test_laei_split = split_laei(x_train_laei, y_train_laei, x_test_laei, y_test_laei, trainsize=laei_size)
 
 
-        x_train = x_train_laei_split
-        x_test = x_test_laei
+        x_train = x_train_laei_split.values
+        x_test = x_test_laei.values
         y_train = y_train_laei_split
         y_test = y_test_laei
 
