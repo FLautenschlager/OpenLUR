@@ -49,9 +49,9 @@ def run(iterations=2, filename=None, season=1, laei_size=180):
         x_train_os_split, x_test_os_split, y_train_os_split, y_test_os_split = split_os(x_train_os, y_train_os)
 
         x_train = np.concatenate((x_train_os_split, x_train_laei_split), axis=0)
-        x_test = np.concatenate((x_test_os_split, x_test_laei), axis=0)
+        x_test = x_test_laei.values
         y_train = np.concatenate((y_train_os_split, y_train_laei_split), axis=0)
-        y_test = np.concatenate((y_test_os_split, y_test_laei), axis=0)
+        y_test = y_test_laei
 
         input.append((model, x_train, y_train, x_test, y_test, i+1, writer))
 

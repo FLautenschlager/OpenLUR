@@ -1,12 +1,12 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: lautenschlager-landuse-two-cities-job
+  name: lautenschlager-landuse-two-cities-2-job
 spec:
   template:
     spec:
       containers:
-        - name: landuse-tow-cities-container
+        - name: landuse-tow-cities-2-container
           image: ls6-staff-registry.informatik.uni-wuerzburg.de/lautenschlager-landuse:1.0
           imagePullPolicy: "IfNotPresent"
           resources:
