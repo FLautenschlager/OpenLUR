@@ -16,9 +16,10 @@ from utils.color import Color
 logging.basicConfig(format='%(levelname)s [%(name)s]:%(message)s', level=logging.INFO)
 
 features = "laei"
-modelnames = "Random_Forest_random_search"
+#modelnames = "Random_Forest_random_search"
 iterations = 40
 
+modelnames = "AutoML"
 
 def run(iterations=2, filename=None, season=1, laei_size=180):
     model = "Random_Forest_random_search"
