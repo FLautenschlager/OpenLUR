@@ -1,7 +1,0 @@
-numpy==1.16.2
-cython
-pandas
-scipy
-auto-sklearn
-pygam
-psycopg2
