@@ -1,5 +1,4 @@
 import logging
-import pickle
 import time
 import argparse
 from tqdm import tqdm
@@ -10,12 +9,10 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import r2_score
 from copy import deepcopy
 
 from pygam import LinearGAM
 from utils.DataLoader import Dataset
-from utils.color import Color
 
 logging.basicConfig(format='%(levelname)s [%(name)s]:%(message)s', level=logging.INFO)
 

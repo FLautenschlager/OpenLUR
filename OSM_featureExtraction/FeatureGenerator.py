@@ -110,6 +110,7 @@ def main(database, file, n_workers):
 
 
 if __name__ == "__main__":
+    ## ****************************** password is "docker" ****************************
 
     parser = argparse.ArgumentParser()
 

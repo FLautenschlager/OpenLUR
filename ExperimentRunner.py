@@ -8,11 +8,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from tensorboardX import SummaryWriter
 #from multiprocessing import Pool
-import multiprocessing as mp
 
-from utils.MyPool import MyPool as Pool
-
-from regression_runner import run_regression
+from utils.regression_runner import run_regression
 from utils.DataLoader import Dataset
 from utils.color import Color
 
@@ -20,7 +17,7 @@ logging.basicConfig(format='%(levelname)s [%(name)s]:%(message)s', level=logging
 
 features = [
     "os",
-     "laei_small",
+    "laei_small",
     # "laei",
      "both"
 ]
