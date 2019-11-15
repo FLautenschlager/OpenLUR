@@ -1,0 +1,13 @@
+runs/*
+output
+kubernetes
+__pycache__
+.idea
+OSM_featureExtraction/OSM-data
+ipynb
+ipynb/*
+*.ipynb
+*.json
+*.pyc
+*.png
+
